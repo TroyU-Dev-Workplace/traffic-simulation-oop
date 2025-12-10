@@ -1,0 +1,27 @@
+.root {
+  -fx-font-family: "Segoe UI", sans-serif;
+  -fx-base: #222;
+  -fx-control-inner-background: #444;
+}
+
+.button {
+  -fx-background-color: #555;
+  -fx-text-fill: white;
+  -fx-border-color: #666;
+  -fx-border-radius: 3;
+  -fx-background-radius: 3;
+}
+
+.button:hover {
+  -fx-background-color: #666;
+}
+
+.button:pressed {
+  -fx-background-color: #444;
+}
+
+.tool-bar {
+  -fx-background-color: #222;
+  -fx-border-color: #444;
+  -fx-border-width: 0 0 1 0;
+}

@@ -1,0 +1,79 @@
+# Java + JavaFX + Maven Project
+# For IntelliJ IDEA and VS Code
+
+### Maven Build Output ###
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+### Java Compiled Output ###
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+hs_err_pid*
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+.idea_modules/
+
+### VS Code ###
+.vscode/
+*.code-workspace
+.history/
+
+### Eclipse (if anyone uses it) ###
+.classpath
+.project
+.settings/
+bin/
+
+### macOS ###
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+### Windows ###
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+### Linux ###
+*~
+.directory
+
+### Logs and Temporary Files ###
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.cache/
+
+### Build and Package Manager ###
+node_modules/
+.gradle/
+build/
+
+### IDE-specific (NetBeans, etc) ###
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
