@@ -21,13 +21,16 @@ public class TrafficLight {
     private State currentState;
     private TrafficLightType type;
     private Direction direction;
+    private Region region; // Nam add: Region assigned to this traffic light
 
-    public TrafficLight(String id, int x, int y, TrafficLightType type, Direction direction) {
+    // Nam add: Include region for per-spawn traffic light matching
+    public TrafficLight(String id, int x, int y, TrafficLightType type, Direction direction, Region region) {
         this.id = id;
         this.x = x;
         this.y = y;
         this.type = type;
         this.direction = direction;
+        this.region = region; // Nam add: Store region
         this.currentState = State.RED;
     }
 
@@ -57,6 +60,11 @@ public class TrafficLight {
 
     public Direction getDirection() {
         return direction;
+    }
+
+    // Nam add: Get region assigned to this traffic light
+    public Region getRegion() {
+        return region;
     }
 
     // Removed internal update() timer logic as TrafficLightSystem will control

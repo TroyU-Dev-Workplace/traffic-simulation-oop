@@ -24,9 +24,10 @@ public class SimulationManager {
     private SpawnPedestrian spawnPedestrianLogic;
 
     public SimulationManager() {
-        this.vehicleManager = new VehicleManager();
-        this.pedestrianManager = new PedestrianManager();
         this.trafficLightSystem = new TrafficLightSystem();
+        // Nam adding: Initialize VehicleManager with traffic light system reference
+        this.vehicleManager = new VehicleManager(trafficLightSystem);
+        this.pedestrianManager = new PedestrianManager();
         // Initialize map 50x36 (1000px / 20px)
         this.mapSystem = new MapSystem(50, 36);
         this.spawnVehicleLogic = new SpawnVehicle(mapSystem, vehicleManager);
@@ -34,7 +35,8 @@ public class SimulationManager {
     }
 
     public void update() {
-        vehicleManager.update();
+        // Nam adding: Use enhanced update method with map integration
+        vehicleManager.updateWithMap(mapSystem.getMap());
         pedestrianManager.update();
         trafficLightSystem.update();
     }
