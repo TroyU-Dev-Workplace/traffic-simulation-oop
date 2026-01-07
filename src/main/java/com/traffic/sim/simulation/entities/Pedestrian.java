@@ -1,42 +1,57 @@
+
 package com.traffic.sim.simulation.entities;
 
-/**
- * Represents a pedestrian in the simulation.
- */
 public class Pedestrian {
-    private String id;
-    private double x, y;
+
+    private final String id;
+
+    private double x;
+    private double y;
     private double speed;
 
-    // New fields for sprite logic
+    private Direction direction;
+
     private String spritePath;
     private double width;
     private double height;
 
-    public Pedestrian(String id, double startX, double startY, double speed) {
+    private int waitingFrames;
+    private final long entryTime;
+
+    public Pedestrian(
+            String id,
+            double x,
+            double y,
+            double speed,
+            Direction direction
+    ) {
         this.id = id;
-        this.x = startX;
-        this.y = startY;
+        this.x = x;
+        this.y = y;
         this.speed = speed;
+        this.direction = direction;
+
+        this.waitingFrames = 0;
+        this.entryTime = System.currentTimeMillis();
 
         initializeSprite();
     }
 
     private void initializeSprite() {
-        // Person 1-11
         int index = (int) (Math.random() * 11) + 1;
         this.spritePath = "/assets/pedestrians/Person" + index + ".png";
 
-        // Fixed size 36px (scaled from 20px * 1.8)
         this.width = 36;
         this.height = 36;
     }
 
     public void update() {
-        // Simple random movement or path following
-        // For starter code, moving simply
-        x += (Math.random() - 0.5) * speed;
-        y += (Math.random() - 0.5) * speed;
+        x += direction.dx() * speed;
+        y += direction.dy() * speed;
+
+        if (speed == 0) {
+            waitingFrames++;
+        }
     }
 
     public String getId() {
@@ -51,6 +66,27 @@ public class Pedestrian {
         return y;
     }
 
+    public void setPosition(double x, double y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    public double getSpeed() {
+        return speed;
+    }
+
+    public void setSpeed(double speed) {
+        this.speed = speed;
+    }
+
+    public Direction getDirection() {
+        return direction;
+    }
+
+    public void setDirection(Direction direction) {
+        this.direction = direction;
+    }
+
     public String getSpritePath() {
         return spritePath;
     }
@@ -61,5 +97,13 @@ public class Pedestrian {
 
     public double getHeight() {
         return height;
+    }
+
+    public int getWaitingFrames() {
+        return waitingFrames;
+    }
+
+    public long getTravelTime() {
+        return System.currentTimeMillis() - entryTime;
     }
 }

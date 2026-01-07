@@ -1,69 +1,72 @@
 package com.traffic.sim.simulation.entities;
 
-/**
- * Represents a vehicle in the simulation.
- */
 public class Vehicle {
-    private String id;
-    private double x, y;
+
+    private final String id;
+
+    private double x;
+    private double y;
+
     private double speed;
-    private double directionX, directionY; // Unit vector for direction
+    private Direction direction;
 
-    // New fields for sprite logic
-    private String vehicleType;
+    private final VehicleType type;
+
     private String spritePath;
-    private double width;
-    private double height;
 
-    public Vehicle(String id, double startX, double startY, double startSpeed) {
+    private double totalCO2;
+    private int waitingFrames;
+    private final long entryTime;
+
+    public Vehicle(
+            String id,
+            double x,
+            double y,
+            double speed,
+            VehicleType type,
+            Direction direction
+    ) {
         this.id = id;
-        this.x = startX;
-        this.y = startY;
-        this.speed = startSpeed;
-        this.directionX = 1; // Default moving right
-        this.directionY = 0;
+        this.x = x;
+        this.y = y;
+        this.speed = speed;
+        this.type = type;
+        this.direction = direction;
+
+        this.totalCO2 = 0.0;
+        this.waitingFrames = 0;
+        this.entryTime = System.currentTimeMillis();
 
         initializeSprite();
     }
 
     private void initializeSprite() {
-        double rand = Math.random();
-        // 33% Car, 33% Truck, 33% Motor
-        if (rand < 0.33) {
-            this.vehicleType = "Car";
-            // Car 1-18
-            int index = (int) (Math.random() * 18) + 1;
-            this.spritePath = "/assets/vehicles/car" + index + ".png";
-            this.width = 80; // Estimated proportional width
-            this.height = 40;
-        } else if (rand < 0.66) {
-            this.vehicleType = "Truck";
-            // Truck (car19-20)
-            int index = (int) (Math.random() * 2) + 19;
-            this.spritePath = "/assets/vehicles/car" + index + ".png";
-            this.width = 150; // Estimated proportional width
-            this.height = 60;
-        } else {
-            this.vehicleType = "Motor";
-            // Motor 1-4
-            int index = (int) (Math.random() * 4) + 1;
-            this.spritePath = "/assets/vehicles/moto" + index + ".png";
-            this.width = 54; // Estimated proportional width
-            this.height = 24;
+        switch (type) {
+            case CAR -> {
+                int index = (int) (Math.random() * 18) + 1;
+                this.spritePath = "/assets/vehicles/car" + index + ".png";
+            }
+            case TRUCK -> {
+                int index = (int) (Math.random() * 2) + 19;
+                this.spritePath = "/assets/vehicles/car" + index + ".png";
+            }
+            case MOTORCYCLE -> {
+                int index = (int) (Math.random() * 4) + 1;
+                this.spritePath = "/assets/vehicles/moto" + index + ".png";
+            }
         }
     }
 
     public void update() {
-        // Simple movement logic
-        x += directionX * speed;
-        y += directionY * speed;
+        x += direction.dx() * speed;
+        y += direction.dy() * speed;
 
-        // Basic boundary check (can be improved with Map interaction)
-    }
-
-    public void setDirection(double dx, double dy) {
-        this.directionX = dx;
-        this.directionY = dy;
+        if (speed == 0) {
+            waitingFrames++;
+            totalCO2 += type.getEmissionIdling();
+        } else {
+            totalCO2 += type.getEmissionMoving();
+        }
     }
 
     public String getId() {
@@ -82,8 +85,20 @@ public class Vehicle {
         return speed;
     }
 
-    public String getVehicleType() {
-        return vehicleType;
+    public void setSpeed(double speed) {
+        this.speed = speed;
+    }
+
+    public Direction getDirection() {
+        return direction;
+    }
+
+    public void setDirection(Direction direction) {
+        this.direction = direction;
+    }
+
+    public VehicleType getType() {
+        return type;
     }
 
     public String getSpritePath() {
@@ -91,10 +106,31 @@ public class Vehicle {
     }
 
     public double getWidth() {
-        return width;
+        return type.getWidth();
     }
 
     public double getHeight() {
-        return height;
+        return type.getHeight();
+    }
+
+    public double getTotalCO2() {
+        return totalCO2;
+    }
+
+    public int getWaitingFrames() {
+        return waitingFrames;
+    }
+
+    public long getTravelTime() {
+        return System.currentTimeMillis() - entryTime;
+    }
+
+    public double getArea() {
+        return type.getWidth() * type.getHeight();
+    }
+
+    public int getLengthInCells() {
+        return (int) Math.ceil(type.getWidth());
     }
 }
+
