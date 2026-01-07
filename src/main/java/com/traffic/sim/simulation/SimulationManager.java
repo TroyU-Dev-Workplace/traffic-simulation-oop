@@ -1,5 +1,7 @@
 package com.traffic.sim.simulation;
 
+import java.util.List;
+
 import com.traffic.sim.simulation.entities.Pedestrian;
 import com.traffic.sim.simulation.entities.TrafficLight;
 import com.traffic.sim.simulation.entities.Vehicle;
@@ -9,7 +11,6 @@ import com.traffic.sim.simulation.managers.TrafficLightSystem;
 import com.traffic.sim.simulation.managers.VehicleManager;
 import com.traffic.sim.simulation.spawn.SpawnPedestrian;
 import com.traffic.sim.simulation.spawn.SpawnVehicle;
-import java.util.List;
 
 /**
  * Main coordinator for the simulation logic.

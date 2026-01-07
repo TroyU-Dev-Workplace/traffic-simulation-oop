@@ -1,9 +1,13 @@
 package com.traffic.sim.simulation.entities;
 
 /**
- * Represents a traffic light in the simulation.
+ * Represents a single traffic light entity in the simulation.
+ * Design Pattern: Pure Data Entity (Passive).
+ * Responsibility: Holds state (color), location, and type.
+ * Note: All control logic is centralized in TrafficLightSystem to separate Data from Logic.
  */
 public class TrafficLight {
+
     public enum State {
         RED, YELLOW, GREEN
     }
@@ -13,11 +17,12 @@ public class TrafficLight {
     }
 
     public enum Direction {
-        NS, EW // North-South, East-West
+        NS, // North-South
+        EW  // East-West
     }
 
     private String id;
-    private int x, y;
+    private int x, y; // Grid coordinates
     private State currentState;
     private TrafficLightType type;
     private Direction direction;
@@ -30,12 +35,20 @@ public class TrafficLight {
         this.y = y;
         this.type = type;
         this.direction = direction;
-        this.region = region; // Nam add: Store region
+        this.region = region;
+        
+        // Always default to RED for safety during initialization
         this.currentState = State.RED;
     }
 
+    // --- ACCESSORS & MUTATORS ---
+
     public void setState(State state) {
         this.currentState = state;
+    }
+
+    public State getCurrentState() {
+        return currentState;
     }
 
     public String getId() {
@@ -50,26 +63,11 @@ public class TrafficLight {
         return y;
     }
 
-    public State getCurrentState() {
-        return currentState;
-    }
-
     public TrafficLightType getType() {
         return type;
     }
 
     public Direction getDirection() {
         return direction;
-    }
-
-    // Nam add: Get region assigned to this traffic light
-    public Region getRegion() {
-        return region;
-    }
-
-    // Removed internal update() timer logic as TrafficLightSystem will control
-    // state
-    public void update() {
-        // No-op for now, state controlled externally
     }
 }
