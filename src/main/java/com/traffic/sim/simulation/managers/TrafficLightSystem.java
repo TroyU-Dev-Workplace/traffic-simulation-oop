@@ -1,6 +1,7 @@
 package com.traffic.sim.simulation.managers;
 
 import com.traffic.sim.simulation.entities.TrafficLight;
+import com.traffic.sim.simulation.entities.Region; // Nam add: Region mapping for traffic lights
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,7 +14,7 @@ public class TrafficLightSystem {
         NS_GREEN, NS_YELLOW, ALL_RED_1, EW_GREEN, EW_YELLOW, ALL_RED_2
     }
 
-    private static final int GREEN_DURATION = 120;
+    private static final int GREEN_DURATION = 100;
     private static final int YELLOW_DURATION = 30;
     private static final int RED_BUFFER = 20;
 
@@ -25,25 +26,26 @@ public class TrafficLightSystem {
     }
 
     private void initializeLights() {
-        // Initialize Vehicle Lights (approximate intersection coordinates)
-        trafficLights.add(new TrafficLight("TL_V_NS_1", 24, 16, TrafficLight.TrafficLightType.VEHICLE,
-                TrafficLight.Direction.NS));
-        trafficLights.add(new TrafficLight("TL_V_NS_2", 26, 20, TrafficLight.TrafficLightType.VEHICLE,
-                TrafficLight.Direction.NS));
-        trafficLights.add(new TrafficLight("TL_V_EW_1", 22, 19, TrafficLight.TrafficLightType.VEHICLE,
-                TrafficLight.Direction.EW));
-        trafficLights.add(new TrafficLight("TL_V_EW_2", 28, 17, TrafficLight.TrafficLightType.VEHICLE,
-                TrafficLight.Direction.EW));
+        // Initialize Vehicle Lights (based on intersection bounds 17-32, 10-25)
+        // Nam fix: Position traffic lights at intersection approaches
+        trafficLights.add(new TrafficLight("TL_V_NS_1", 24, 9, TrafficLight.TrafficLightType.VEHICLE,
+                TrafficLight.Direction.NS, Region.NORTH));  // North approach
+        trafficLights.add(new TrafficLight("TL_V_NS_2", 25, 26, TrafficLight.TrafficLightType.VEHICLE,
+                TrafficLight.Direction.NS, Region.SOUTH)); // South approach
+        trafficLights.add(new TrafficLight("TL_V_EW_1", 16, 17, TrafficLight.TrafficLightType.VEHICLE,
+                TrafficLight.Direction.EW, Region.WEST));  // West approach
+        trafficLights.add(new TrafficLight("TL_V_EW_2", 33, 18, TrafficLight.TrafficLightType.VEHICLE,
+                TrafficLight.Direction.EW, Region.EAST));  // East approach
 
         // Initialize Pedestrian Lights (corners)
         trafficLights.add(new TrafficLight("TL_P_NS_1", 23, 16, TrafficLight.TrafficLightType.PEDESTRIAN,
-                TrafficLight.Direction.NS)); // Top-Left-ish
+                TrafficLight.Direction.NS, Region.NORTH)); // Top-Left-ish
         trafficLights.add(new TrafficLight("TL_P_EW_1", 27, 16, TrafficLight.TrafficLightType.PEDESTRIAN,
-                TrafficLight.Direction.EW)); // Top-Right-ish
+                TrafficLight.Direction.EW, Region.EAST)); // Top-Right-ish
         trafficLights.add(new TrafficLight("TL_P_NS_2", 23, 20, TrafficLight.TrafficLightType.PEDESTRIAN,
-                TrafficLight.Direction.NS)); // Bottom-Left-ish
+                TrafficLight.Direction.NS, Region.WEST)); // Bottom-Left-ish
         trafficLights.add(new TrafficLight("TL_P_EW_2", 27, 20, TrafficLight.TrafficLightType.PEDESTRIAN,
-                TrafficLight.Direction.EW)); // Bottom-Right-ish
+                TrafficLight.Direction.EW, Region.SOUTH)); // Bottom-Right-ish
     }
 
     public void addTrafficLight(TrafficLight tl) {

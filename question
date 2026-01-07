@@ -1,0 +1,8 @@
+Read java folder and answer my questions below:
+Question 1: 
+Read Map.java, answer for me: How map defined blocked area, sidewalk, road...?
+How it interacts, how rendering know that this areas location is blocked area, sidewalk,...
+Question 2:
+Read simulation folder, answer for me:
+- When vehicle spawning randomly position, it does not take information about the position it spawned on the map? If it spawn on the same location with others? What about when moving, collisions handle? Vehicle does not get traffic lights info?
+- Pedestrian does not move why?
