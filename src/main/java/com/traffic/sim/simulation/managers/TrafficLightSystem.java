@@ -14,7 +14,7 @@ public class TrafficLightSystem {
         NS_GREEN, NS_YELLOW, ALL_RED_1, EW_GREEN, EW_YELLOW, ALL_RED_2
     }
 
-    private static final int GREEN_DURATION = 100;
+    private static final int GREEN_DURATION = 150;
     private static final int YELLOW_DURATION = 30;
     private static final int RED_BUFFER = 20;
 

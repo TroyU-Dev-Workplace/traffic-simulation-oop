@@ -37,7 +37,7 @@ public class SimulationManager {
     public void update() {
         // Nam adding: Use enhanced update method with map integration
         vehicleManager.updateWithMap(mapSystem.getMap());
-        pedestrianManager.update();
+        pedestrianManager.updateWithMap(mapSystem.getMap()); // Use map-aware pedestrian update
         trafficLightSystem.update();
     }
 

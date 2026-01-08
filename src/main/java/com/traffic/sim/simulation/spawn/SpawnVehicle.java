@@ -45,6 +45,9 @@ public class SpawnVehicle extends SpawnBase {
 
             Vehicle vehicle = new Vehicle(id, spawnPoint[0] + 0.5, spawnPoint[1] + 0.5, 0.05, type, direction);
             vehicle.setDirection(selectedRegion.dirX, selectedRegion.dirY);
+            
+            // Set rotation based on spawn region
+            setVehicleRotation(vehicle, selectedRegion.name);
 
             // Nam adding: Decide turn direction at spawn time only
             assignRandomTurnDirection(vehicle, selectedRegion.name);
@@ -70,17 +73,17 @@ public class SpawnVehicle extends SpawnBase {
         return Direction.RIGHT; // default
     }
 
-    // Nam adding: Method to assign random turn directions based on spawn region
+    // Nam adding: Method to assign random turn directions - 3 possible directions (U-turn removed)
     private void assignRandomTurnDirection(Vehicle vehicle, String regionName) {
-        // Nam adding: Decide straight vs turn once at spawn time
+        // Nam adding: 3 equal probability directions: STRAIGHT, LEFT, RIGHT
         double rand = Math.random();
 
-        if (rand < 0.3) {
-            vehicle.setPlannedTurn(Vehicle.TurnDirection.LEFT);
-        } else if (rand < 0.6) {
-            vehicle.setPlannedTurn(Vehicle.TurnDirection.RIGHT);
-        } else {
+        if (rand < 0.33) {
             vehicle.setPlannedTurn(Vehicle.TurnDirection.STRAIGHT);
+        } else if (rand < 0.66) {
+            vehicle.setPlannedTurn(Vehicle.TurnDirection.LEFT);
+        } else {
+            vehicle.setPlannedTurn(Vehicle.TurnDirection.RIGHT);
         }
     }
 
@@ -96,6 +99,31 @@ public class SpawnVehicle extends SpawnBase {
             return Region.WEST;
         }
         return Region.EAST;
+    }
+
+    // Set vehicle rotation based on spawn region - vehicle asset faces East by default
+    // Rotation ensures vehicle faces the direction it will initially move
+    private void setVehicleRotation(Vehicle vehicle, String regionName) {
+        switch (regionName) {
+            case "NORTH":
+                // Spawn from North, moving South: face South (rotate 90°)
+                vehicle.setRotation(90.0);
+                break;
+            case "WEST":
+                // Spawn from West, moving East: face East (no rotation needed)
+                vehicle.setRotation(0.0);
+                break;
+            case "SOUTH":
+                // Spawn from South, moving North: face North (rotate -90°)
+                vehicle.setRotation(-90.0);
+                break;
+            case "EAST":
+                // Spawn from East, moving West: face West (rotate 180°)
+                vehicle.setRotation(180.0);
+                break;
+            default:
+                vehicle.setRotation(0.0);
+        }
     }
 
     // Nam adding: Static variables for region cycling

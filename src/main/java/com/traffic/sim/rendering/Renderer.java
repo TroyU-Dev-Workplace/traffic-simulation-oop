@@ -97,8 +97,8 @@ public class Renderer {
             imageView.setX(pixelX - v.getWidth() / 2.0 + TILE_SIZE / 2.0);
             imageView.setY(pixelY - v.getHeight() / 2.0 + TILE_SIZE / 2.0);
 
-            // Rotate based on direction (basic implementation)
-            // if (v.getDirectionX() ...) -> rotation logic can be added later
+            // Apply rotation from vehicle
+            imageView.setRotate(v.getRotation());
 
             canvas.getChildren().add(imageView);
         }
