@@ -1,5 +1,7 @@
 package com.traffic.sim.simulation.map;
 
+import com.traffic.sim.simulation.entities.Region;
+
 /**
  * Represents the simulation grid.
  * TileType values:
@@ -189,19 +191,16 @@ public class Map {
      */
     public boolean isDriveable(int x, int y) {
         int tileType = getTileType(x, y);
-        return tileType == 2; // Nam adding: road tiles only
+        return tileType == ROAD || tileType == CROSSWALK || tileType == STOP_LINE || tileType == LANE_DIVIDER;
     }
 
     public boolean isDriveableForVehicle(int x, int y) {
         int tileType = getTileType(x, y);
-        if (tileType == 2) {
+        // Fix: Check for actual road tiles (ROAD=0), not SIDEWALK=2
+        if (tileType == ROAD || tileType == CROSSWALK || tileType == STOP_LINE || tileType == LANE_DIVIDER) {
             return true;
         }
-        if (tileType != 1) {
-            return false;
-        }
-        // Allow short sidewalk bands that connect two road segments (crosswalks).
-        return hasRoadBridge(x, y, 0, -1, 0, 1) || hasRoadBridge(x, y, -1, 0, 1, 0);
+        return false;
     }
 
     /**
@@ -209,7 +208,7 @@ public class Map {
      */
     public boolean isIntersection(int x, int y) {
         // Nam adding: Intersection detected when road connects in both axes
-        if (getTileType(x, y) != 2) {
+        if (!isDriveable(x, y)) {
             return false;
         }
         boolean vertical = isDriveable(x, y - 1) && isDriveable(x, y + 1);
@@ -340,5 +339,30 @@ public class Map {
             }
         }
         return false;
+    }
+
+    // Helper method to get stop line position for a specific region
+    public double[] getStopLinePosition(Region region) {
+        switch (region) {
+            case NORTH:
+                // Stop line phía trên: x=17-25, y=5-6
+                return new double[]{21.0, 6.0}; // center of stop line
+            case SOUTH:
+                // Stop line phía dưới: x=24-32, y=29-30  
+                return new double[]{28.0, 29.0}; // center of stop line
+            case WEST:
+                // Stop line phía trái: x=12-13, y=17-25
+                return new double[]{13.0, 21.0}; // center of stop line
+            case EAST:
+                // Stop line phía phải: x=36-37, y=10-18
+                return new double[]{36.0, 14.0}; // center of stop line
+            default:
+                return new double[]{0.0, 0.0};
+        }
+    }
+
+    // Check if a position is on stop line
+    public boolean isStopLine(int x, int y) {
+        return getTileType(x, y) == STOP_LINE;
     }
 }

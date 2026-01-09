@@ -32,6 +32,10 @@ public class TrafficLightSystem {
         EW_GREEN, EW_YELLOW, ALL_RED_2
     }
 
+    private static final int GREEN_DURATION = 150;
+    private static final int YELLOW_DURATION = 30;
+    private static final int RED_BUFFER = 20;
+
     public TrafficLightSystem() {
         this.trafficLights = new ArrayList<>();
         initializeLights();
@@ -71,7 +75,7 @@ public class TrafficLightSystem {
     }
 
     // --- UI INTERACTION API ---
-    
+
     /**
      * Public API exposed for the UI layer (Person 1).
      * Allows dynamic reconfiguration of signal timings.
@@ -90,7 +94,7 @@ public class TrafficLightSystem {
     }
 
     // --- MAIN SIMULATION LOOP ---
-    
+
     public void update() {
         timer++;
 
@@ -100,22 +104,28 @@ public class TrafficLightSystem {
         // Time-based State Machine transitions
         switch (currentPhase) {
             case NS_GREEN:
-                if (timer > greenDuration) switchPhase(Phase.NS_YELLOW);
+                if (timer > greenDuration)
+                    switchPhase(Phase.NS_YELLOW);
                 break;
             case NS_YELLOW:
-                if (timer > yellowDuration) switchPhase(Phase.ALL_RED_1);
+                if (timer > yellowDuration)
+                    switchPhase(Phase.ALL_RED_1);
                 break;
             case ALL_RED_1: // Safety Buffer 1
-                if (timer > redBuffer) switchPhase(Phase.EW_GREEN);
+                if (timer > redBuffer)
+                    switchPhase(Phase.EW_GREEN);
                 break;
             case EW_GREEN:
-                if (timer > greenDuration) switchPhase(Phase.EW_YELLOW);
+                if (timer > greenDuration)
+                    switchPhase(Phase.EW_YELLOW);
                 break;
             case EW_YELLOW:
-                if (timer > yellowDuration) switchPhase(Phase.ALL_RED_2);
+                if (timer > yellowDuration)
+                    switchPhase(Phase.ALL_RED_2);
                 break;
             case ALL_RED_2: // Safety Buffer 2
-                if (timer > redBuffer) switchPhase(Phase.NS_GREEN);
+                if (timer > redBuffer)
+                    switchPhase(Phase.NS_GREEN);
                 break;
         }
     }
@@ -126,7 +136,7 @@ public class TrafficLightSystem {
     }
 
     // --- LIGHT SYNCHRONIZATION LOGIC ---
-    
+
     private void updateLights() {
         switch (currentPhase) {
             case NS_GREEN:
@@ -164,7 +174,7 @@ public class TrafficLightSystem {
                 boolean isVehicleMovingHere = (tl.getDirection() == activeDir);
 
                 if (isVehicleMovingHere) {
-                    tl.setState(State.RED);   // Stop if cars are moving
+                    tl.setState(State.RED); // Stop if cars are moving
                 } else {
                     tl.setState(State.GREEN); // Go if cars are stopped
                 }
@@ -184,7 +194,7 @@ public class TrafficLightSystem {
     }
 
     // --- CORE SIMULATION API (Person 5) ---
-    
+
     /**
      * Used by the Simulation Core to determine if a vehicle must stop.
      * Returns RED if the specific signal is not found (Safety default).
@@ -219,9 +229,13 @@ public class TrafficLightSystem {
         trafficLights.add(new TrafficLight("TL_V_EW_1", 22, 19, TrafficLightType.VEHICLE, Direction.EW, Region.SOUTH));
         trafficLights.add(new TrafficLight("TL_V_EW_2", 28, 17, TrafficLightType.VEHICLE, Direction.EW, Region.EAST));
         // Init Pedestrians
-        trafficLights.add(new TrafficLight("TL_P_NS_1", 23, 16, TrafficLightType.PEDESTRIAN, Direction.NS, Region.NORTH));
-        trafficLights.add(new TrafficLight("TL_P_EW_1", 27, 16, TrafficLightType.PEDESTRIAN, Direction.EW, Region.WEST));
-        trafficLights.add(new TrafficLight("TL_P_NS_2", 23, 20, TrafficLightType.PEDESTRIAN, Direction.NS, Region.SOUTH));
-        trafficLights.add(new TrafficLight("TL_P_EW_2", 27, 20, TrafficLightType.PEDESTRIAN, Direction.EW, Region.EAST));
+        trafficLights
+                .add(new TrafficLight("TL_P_NS_1", 23, 16, TrafficLightType.PEDESTRIAN, Direction.NS, Region.NORTH));
+        trafficLights
+                .add(new TrafficLight("TL_P_EW_1", 27, 16, TrafficLightType.PEDESTRIAN, Direction.EW, Region.WEST));
+        trafficLights
+                .add(new TrafficLight("TL_P_NS_2", 23, 20, TrafficLightType.PEDESTRIAN, Direction.NS, Region.SOUTH));
+        trafficLights
+                .add(new TrafficLight("TL_P_EW_2", 27, 20, TrafficLightType.PEDESTRIAN, Direction.EW, Region.EAST));
     }
 }

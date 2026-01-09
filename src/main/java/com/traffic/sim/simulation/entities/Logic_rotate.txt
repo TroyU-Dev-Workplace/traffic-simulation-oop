@@ -1,0 +1,29 @@
+Logic rotate asset image UI:
+Hiện tại đang bị lỗi sai rotate, hãy check lại dựa theo logic hiện tại của tôi (check lại code):
+Lúc đầu, ảnh asset cần được rotate ở hướng phù hợp (logic rotate này thì code hiện tại đã làm được rồi)
+Rồi sau đó, khi phương tiện spawn ra ở các hướng khác nhau, thì khi rẽ trái hoặc phải sẽ có các góc rotate như sau
+tuy nhiên sau đó khi rotate hướng để quay rẽ trái phải thì đang bị lỗi , hãy check lại lỗi code  và sửa lại cho đúng
+- Nếu spawn ra ở West:
+    + Phương tiện muốn rẽ trái rotate -90 độ
+    + Phương tiện muốn rẽ phải rotate 90 độ
+- Nếu spawn ra ở East:
+    + Phương tiện muốn rẽ trái rotate -90 độ
+    + Phương tiện muốn rẽ phải rotate 90 độ
+- Nếu spawn ra ở North:
+    + Phương tiện muốn rẽ trái rotate -90 độ
+    + Phương tiện muốn rẽ phải rotate 90 độ
+- Nếu spawn ra ở South:
+    + Phương tiện muốn rẽ trái rotate -90 độ độ
+    + Phương tiện muốn rẽ phải rotate 90 độ
+
+
+Bạn là lập trình viên Java. Hãy sửa lỗi rotate asset image trong dự án traffic simulator. Yêu cầu:
+Kiểm tra lại logic rotate hiện tại trong code (đặc biệt Vehicle.java, và nơi xử lý spawn/turn nếu có).
+Logic ban đầu: ảnh asset phải được rotate đúng hướng spawn (logic này đang đúng, không được phá).
+Lỗi nằm ở bước sau: khi phương tiện spawn ở các hướng khác nhau và rẽ trái/phải thì góc rotate đang sai.
+Quy tắc đúng: bất kể spawn ở West/East/North/South
+rẽ trái: rotate -90 độ
+rẽ phải: rotate 90 độ
+Hãy tìm đoạn code áp dụng rotate khi rẽ trái/phải, chỉ sửa phần sai để khớp quy tắc trên.
+Không thay đổi behavior khác ngoài việc sửa góc rotate khi rẽ trái/phải.
+Nếu cần, thêm comment ngắn để giải thích logic.

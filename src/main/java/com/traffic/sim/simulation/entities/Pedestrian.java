@@ -53,6 +53,50 @@ public class Pedestrian {
             waitingFrames++;
         }
     }
+    
+    // Enhanced update with map-aware movement
+    public void updateWithMap(com.traffic.sim.simulation.map.Map map) {
+        if (speed > 0) {
+            double nextX = x + direction.dx() * speed;
+            double nextY = y + direction.dy() * speed;
+            
+            int gridX = (int) Math.floor(nextX);
+            int gridY = (int) Math.floor(nextY);
+            
+            // Check if next position is walkable
+            if (map.isValid(gridX, gridY) && map.isWalkable(gridX, gridY)) {
+                x = nextX;
+                y = nextY;
+            } else {
+                // Try to find alternate path or change direction
+                findNewDirection(map);
+            }
+        } else {
+            waitingFrames++;
+        }
+    }
+    
+    private void findNewDirection(com.traffic.sim.simulation.map.Map map) {
+        // Try different directions to find walkable path
+        Direction[] directions = {Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT};
+        
+        for (Direction newDir : directions) {
+            if (newDir == direction) continue; // Don't go back same direction
+            
+            double testX = x + newDir.dx() * speed;
+            double testY = y + newDir.dy() * speed;
+            int gridX = (int) Math.floor(testX);
+            int gridY = (int) Math.floor(testY);
+            
+            if (map.isValid(gridX, gridY) && map.isWalkable(gridX, gridY)) {
+                this.direction = newDir;
+                return;
+            }
+        }
+        
+        // If no direction works, stop temporarily
+        speed = 0;
+    }
 
     public String getId() {
         return id;

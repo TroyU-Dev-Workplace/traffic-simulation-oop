@@ -2,7 +2,7 @@ package com.traffic.sim.simulation.entities;
 
 public class Vehicle {
 
-    // Nam adding: Enum for turn directions
+    // Nam adding: Enum for turn directions - 3 possible directions (U-turn removed)
     public enum TurnDirection {
         STRAIGHT, LEFT, RIGHT
     }
@@ -26,6 +26,9 @@ public class Vehicle {
     private boolean isTurning; // Currently executing a turn
     private double turnStartDirX;
     private double turnStartDirY;
+    
+    // U-turn variables removed - no longer needed
+    
     private Region spawnRegion; // Nam add: Track spawn region for traffic light matching
     private boolean isStoppedForVehicle; // Nam add: Stop flag for vehicle-ahead collision
     private int spawnRegionMinX; // Nam add: Spawn region bounds for traffic light checks
@@ -36,6 +39,7 @@ public class Vehicle {
     private Double spawnRegionCenterX; // Nam add: Spawn region center for region checks
     private Double spawnRegionCenterY; // Nam add: Spawn region center for region checks
     private boolean shouldBeRemoved = false; // Flag to indicate if vehicle should be removed
+    private double rotation = 0.0; // Rotation angle in degrees for sprite rendering
 
     private double totalCO2;
     private int waitingFrames;
@@ -80,6 +84,8 @@ public class Vehicle {
         this.spawnRegionBoundsSet = false; // Nam add: Initialize spawn region bounds flag
         this.spawnRegionCenterX = null; // Nam add: Initialize spawn region center
         this.spawnRegionCenterY = null; // Nam add: Initialize spawn region center
+        
+        // U-turn initialization removed
 
         initializeSprite();
     }
@@ -132,6 +138,8 @@ public class Vehicle {
         // Update turn start direction
         this.turnStartDirX = dx;
         this.turnStartDirY = dy;
+        
+        // Don't auto-update rotation - keep spawn rotation
     }
 
     public String getId() {
@@ -163,6 +171,8 @@ public class Vehicle {
         this.direction = direction;
         this.turnStartDirX = direction.dx();
         this.turnStartDirY = direction.dy();
+        
+        // Don't auto-update rotation - keep spawn rotation
     }
 
     public VehicleType getType() {
@@ -311,6 +321,12 @@ public class Vehicle {
                 x = nextX;
                 y = nextY;
                 totalCO2 += type.getEmissionMoving();
+                
+                // Keep existing rotation when moving straight
+            } else {
+                // Debug: If vehicle can't move forward due to non-driveable tile, try alternate paths
+                // For now, just stop and let VehicleManager handle restoration
+                speed = 0.0;
             }
         } else {
             // Nam adding: Vehicle moved outside map bounds - mark for removal
@@ -318,9 +334,17 @@ public class Vehicle {
         }
     }
 
-    // Nam adding: Method to execute turning behavior
+    // Nam adding: Method to execute turning behavior (U-turn removed)
     private void executeTurn() {
-        turnProgress += 0.1; // Adjust turn speed
+        executeRegularTurn();
+        
+        // Update rotation during turn for smooth visual transition
+        updateRotationDuringTurn();
+    }
+    
+    // Execute regular LEFT/RIGHT turns
+    private void executeRegularTurn() {
+        turnProgress += 0.1; // Regular turn speed
         double t = Math.min(turnProgress, 1.0);
 
         double baseX = turnStartDirX;
@@ -356,6 +380,7 @@ public class Vehicle {
             completeTurn();
         }
     }
+    // executeUTurn method removed
 
     // Nam adding: Complete the turn and set final direction
     private void completeTurn() {
@@ -382,6 +407,7 @@ public class Vehicle {
                 direction = Direction.UP;
             }
         }
+        // U-turn logic removed
 
         // Update turn start direction
         turnStartDirX = direction.dx();
@@ -390,13 +416,33 @@ public class Vehicle {
         // Nam adding: Reset turning flags
         isTurning = false;
         turnProgress = 0.0;
+        
+        // Apply rotation when turn completes
+        applyTurnRotation();
     }
+    
+    // U-turn helper methods removed
 
     /**
      * Nam adding: Check if vehicle should be removed from simulation
      */
     public boolean shouldBeRemoved() {
         return shouldBeRemoved;
+    }
+    
+    /**
+     * Mark vehicle for removal
+     */
+    public void markForRemoval() {
+        this.shouldBeRemoved = true;
+    }
+    
+    /**
+     * Set position for vehicle (used for relocation)
+     */
+    public void setPosition(double x, double y) {
+        this.x = x;
+        this.y = y;
     }
 
     // Nam adding: Turning system methods
@@ -510,9 +556,12 @@ public class Vehicle {
         if (plannedTurn == TurnDirection.LEFT) {
             targetX = -baseY;
             targetY = baseX;
-        } else {
+        } else if (plannedTurn == TurnDirection.RIGHT) {
             targetX = baseY;
             targetY = -baseX;
+        } else { // Default to straight ahead
+            targetX = baseX;
+            targetY = baseY;
         }
 
         if (hasVehicleAheadInDirection(vehicles, direction.dx(), direction.dy(), lookAheadDistance, lateralThreshold)) {
@@ -561,5 +610,71 @@ public class Vehicle {
             }
         }
         return false;
+    }
+
+    // Rotation getter and setter for sprite rendering
+    public double getRotation() {
+        return rotation;
+    }
+
+    public void setRotation(double rotation) {
+        this.rotation = rotation;
+    }
+    
+    // Update rotation based on current direction (for completed turns)
+    private void updateRotationBasedOnDirection() {
+        // Only update rotation if not manually set by spawn
+        // Let spawn rotation persist until vehicle actually changes direction
+    }
+    
+    // Update rotation during turning for smooth transition
+    private void updateRotationDuringTurn() {
+        // For LEFT/RIGHT turns, rotation is applied once when turn completes
+        // No rotation during turn, only at completion
+    }
+    // updateUTurnRotation method removed
+    
+    // Calculate what direction vehicle will be facing after completing the turn
+    private Direction calculateTargetDirection() {
+        Direction currentDir = direction;
+        
+        if (plannedTurn == TurnDirection.LEFT) {
+            // Left turn: rotate direction 90° counter-clockwise
+            switch (currentDir) {
+                case UP:    return Direction.LEFT;   // North -> West
+                case LEFT:  return Direction.DOWN;   // West -> South  
+                case DOWN:  return Direction.RIGHT;  // South -> East
+                case RIGHT: return Direction.UP;     // East -> North
+                default:    return currentDir;
+            }
+        } else if (plannedTurn == TurnDirection.RIGHT) {
+            // Right turn: rotate direction 90° clockwise
+            switch (currentDir) {
+                case UP:    return Direction.RIGHT;  // North -> East
+                case RIGHT: return Direction.DOWN;   // East -> South
+                case DOWN:  return Direction.LEFT;   // South -> West
+                case LEFT:  return Direction.UP;     // West -> North
+                default:    return currentDir;
+            }
+        }
+        // U-turn logic removed
+        
+        return currentDir; // STRAIGHT or unknown
+    }
+    
+    
+    // Apply rotation when regular turn completes - theo Logic_rotate.txt
+    private void applyTurnRotation() {
+        // Direct calculation based on final direction to ensure correctness
+        switch (direction) {
+            case UP:    this.rotation = -90.0; break; // North
+            case RIGHT: this.rotation = 0.0; break;  // East
+            case DOWN:  this.rotation = 90.0; break; // South
+            case LEFT:  this.rotation = 180.0; break; // West
+        }
+        
+        // Normalize rotation to (-180, 180] range
+        while (this.rotation > 180.0) this.rotation -= 360.0;
+        while (this.rotation <= -180.0) this.rotation += 360.0;
     }
 }

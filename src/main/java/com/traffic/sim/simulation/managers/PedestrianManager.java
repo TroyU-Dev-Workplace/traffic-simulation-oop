@@ -22,6 +22,13 @@ public class PedestrianManager {
             p.update();
         }
     }
+    
+    // Enhanced update method with map interaction
+    public void updateWithMap(com.traffic.sim.simulation.map.Map map) {
+        for (Pedestrian p : pedestrians.values()) {
+            p.updateWithMap(map);
+        }
+    }
 
     public List<Pedestrian> getPedestrians() {
         return new ArrayList<>(pedestrians.values());
