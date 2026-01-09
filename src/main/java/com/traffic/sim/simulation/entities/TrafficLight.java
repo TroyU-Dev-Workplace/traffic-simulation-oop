@@ -4,7 +4,8 @@ package com.traffic.sim.simulation.entities;
  * Represents a single traffic light entity in the simulation.
  * Design Pattern: Pure Data Entity (Passive).
  * Responsibility: Holds state (color), location, and type.
- * Note: All control logic is centralized in TrafficLightSystem to separate Data from Logic.
+ * Note: All control logic is centralized in TrafficLightSystem to separate Data
+ * from Logic.
  */
 public class TrafficLight {
 
@@ -18,7 +19,7 @@ public class TrafficLight {
 
     public enum Direction {
         NS, // North-South
-        EW  // East-West
+        EW // East-West
     }
 
     private String id;
@@ -36,7 +37,7 @@ public class TrafficLight {
         this.type = type;
         this.direction = direction;
         this.region = region;
-        
+
         // Always default to RED for safety during initialization
         this.currentState = State.RED;
     }
@@ -69,5 +70,9 @@ public class TrafficLight {
 
     public Direction getDirection() {
         return direction;
+    }
+
+    public Region getRegion() {
+        return region;
     }
 }
