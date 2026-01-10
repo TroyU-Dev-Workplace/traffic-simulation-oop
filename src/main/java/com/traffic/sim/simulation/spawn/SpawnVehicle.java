@@ -5,7 +5,7 @@ import com.traffic.sim.simulation.entities.Vehicle;
 import com.traffic.sim.simulation.entities.VehicleType;
 import com.traffic.sim.simulation.managers.MapSystem;
 import com.traffic.sim.simulation.managers.VehicleManager;
-import com.traffic.sim.simulation.entities.Region; // Nam add: Assign spawn region
+import com.traffic.sim.simulation.entities.Region;
 import java.util.UUID;
 
 public class SpawnVehicle extends SpawnBase {
@@ -18,11 +18,9 @@ public class SpawnVehicle extends SpawnBase {
 
     @Override
     public void spawn() {
-        // Nam adding: Spawn only in 4 regions (North/West/South/East) on road tiles
         RegionBounds intersection = findIntersectionBounds();
         SpawnRegion[] spawnRegions = buildRegionSpawns(intersection);
 
-        // Nam adding: Cycling through 4 spawn regions
         if (!hasStaticCounter) {
             regionCounter = 0;
             hasStaticCounter = true;
@@ -31,32 +29,46 @@ public class SpawnVehicle extends SpawnBase {
         SpawnRegion selectedRegion = spawnRegions[regionCounter % 4];
         regionCounter = (regionCounter + 1) % 4;
 
-        // Nam adding: Try to spawn in the selected region
-        int[] spawnPoint = pickSpawnPoint(selectedRegion);
+        String id = UUID.randomUUID().toString();
+
+        double typeRand = Math.random();
+        VehicleType type;
+        if (typeRand < 0.45) {
+            type = VehicleType.CAR;
+        } else if (typeRand < 0.90) {
+            type = VehicleType.MOTORCYCLE;
+        } else {
+            type = VehicleType.TRUCK;
+        }
+
+        int[] spawnPoint = pickSpawnPoint(selectedRegion, type);
         if (spawnPoint != null) {
-            String id = UUID.randomUUID().toString();
 
-            // Random vehicle type
-            VehicleType[] types = VehicleType.values();
-            VehicleType type = types[(int) (Math.random() * types.length)];
-
-            // Get direction from spawn region
             Direction direction = getDirectionFromRegion(selectedRegion);
 
-            Vehicle vehicle = new Vehicle(id, spawnPoint[0] + 0.5, spawnPoint[1] + 0.5, 0.05, type, direction);
-            vehicle.setDirection(selectedRegion.dirX, selectedRegion.dirY);
-            
-            // Set rotation based on spawn region
-            setVehicleRotation(vehicle, selectedRegion.name);
+            double spawnX = spawnPoint[0];
+            double spawnY = spawnPoint[1];
 
-            // Nam adding: Decide turn direction at spawn time only
+            boolean isHorizontal = (direction == Direction.RIGHT || direction == Direction.LEFT);
+            int effectiveWidth = isHorizontal ? type.getWidthCells() : type.getHeightCells();
+            int effectiveHeight = isHorizontal ? type.getHeightCells() : type.getWidthCells();
+
+            if (effectiveWidth % 2 != 0) {
+                spawnX += 0.5;
+            }
+            if (effectiveHeight % 2 != 0) {
+                spawnY += 0.5;
+            }
+
+            Vehicle vehicle = new Vehicle(id, spawnX, spawnY, 0.05, type, direction);
+            vehicle.setDirection(selectedRegion.dirX, selectedRegion.dirY);
+
+            setVehicleRotation(vehicle, selectedRegion.name);
             assignRandomTurnDirection(vehicle, selectedRegion.name);
-            // Nam add: Save spawn region for traffic light filtering
+
             vehicle.setSpawnRegion(parseRegion(selectedRegion.name));
-            // Nam add: Save spawn region bounds for traffic light checks
             vehicle.setSpawnRegionBounds(selectedRegion.minX, selectedRegion.minY,
                     selectedRegion.maxX, selectedRegion.maxY);
-            // Nam add: Save intersection center for region boundary checks
             vehicle.setSpawnRegionCenter(mapSystem.getMap().getIntersectionCenterX(),
                     mapSystem.getMap().getIntersectionCenterY());
 
@@ -64,18 +76,19 @@ public class SpawnVehicle extends SpawnBase {
         }
     }
 
-    // Convert spawn region direction to Direction enum
     private Direction getDirectionFromRegion(SpawnRegion region) {
-        if (region.dirX > 0) return Direction.RIGHT;
-        if (region.dirX < 0) return Direction.LEFT;
-        if (region.dirY > 0) return Direction.DOWN;
-        if (region.dirY < 0) return Direction.UP;
+        if (region.dirX > 0)
+            return Direction.RIGHT;
+        if (region.dirX < 0)
+            return Direction.LEFT;
+        if (region.dirY > 0)
+            return Direction.DOWN;
+        if (region.dirY < 0)
+            return Direction.UP;
         return Direction.RIGHT; // default
     }
 
-    // Nam adding: Method to assign random turn directions - 3 possible directions (U-turn removed)
     private void assignRandomTurnDirection(Vehicle vehicle, String regionName) {
-        // Nam adding: 3 equal probability directions: STRAIGHT, LEFT, RIGHT
         double rand = Math.random();
 
         if (rand < 0.33) {
@@ -87,7 +100,6 @@ public class SpawnVehicle extends SpawnBase {
         }
     }
 
-    // Nam add: Convert region name to Region enum
     private Region parseRegion(String regionName) {
         if ("NORTH".equals(regionName)) {
             return Region.NORTH;
@@ -101,24 +113,18 @@ public class SpawnVehicle extends SpawnBase {
         return Region.EAST;
     }
 
-    // Set vehicle rotation based on spawn region - vehicle asset faces East by default
-    // Rotation ensures vehicle faces the direction it will initially move
     private void setVehicleRotation(Vehicle vehicle, String regionName) {
         switch (regionName) {
             case "NORTH":
-                // Spawn from North, moving South: face South (rotate 90°)
                 vehicle.setRotation(90.0);
                 break;
             case "WEST":
-                // Spawn from West, moving East: face East (no rotation needed)
                 vehicle.setRotation(0.0);
                 break;
             case "SOUTH":
-                // Spawn from South, moving North: face North (rotate -90°)
                 vehicle.setRotation(-90.0);
                 break;
             case "EAST":
-                // Spawn from East, moving West: face West (rotate 180°)
                 vehicle.setRotation(180.0);
                 break;
             default:
@@ -126,15 +132,13 @@ public class SpawnVehicle extends SpawnBase {
         }
     }
 
-    // Nam adding: Static variables for region cycling
     private static int regionCounter = 0;
     private static boolean hasStaticCounter = false;
 
-    // Nam adding: Helper class to define spawn regions
     private static class SpawnRegion {
         int minX, minY, maxX, maxY;
         double dirX, dirY;
-        String name; // Nam adding: Region name for debugging
+        String name;
 
         SpawnRegion(int minX, int minY, int maxX, int maxY, double dirX, double dirY, String name) {
             this.minX = minX;
@@ -143,11 +147,10 @@ public class SpawnVehicle extends SpawnBase {
             this.maxY = maxY;
             this.dirX = dirX;
             this.dirY = dirY;
-            this.name = name; // Nam adding: Store region name
+            this.name = name;
         }
     }
 
-    // Nam adding: Bounds for intersection detection
     private static class RegionBounds {
         int minX, minY, maxX, maxY;
 
@@ -159,95 +162,78 @@ public class SpawnVehicle extends SpawnBase {
         }
     }
 
-    // Nam adding: Find intersection bounds from the map
     private RegionBounds findIntersectionBounds() {
-        // Nam add: Use map-provided intersection bounds for consistent regions
         int[] bounds = mapSystem.getMap().getIntersectionBounds();
         return new RegionBounds(bounds[0], bounds[1], bounds[2], bounds[3]);
     }
 
-    // Nam fix: Build 4 region spawns around the intersection for edge spawning
     private SpawnRegion[] buildRegionSpawns(RegionBounds intersection) {
         int width = mapSystem.getMap().getWidth();
         int height = mapSystem.getMap().getHeight();
 
         return new SpawnRegion[] {
-            // Nam fix: NORTH region - from map top edge to intersection
-            new SpawnRegion(intersection.minX, 0, intersection.maxX + 1, intersection.minY, 0, 1, "NORTH"),
-            // Nam fix: WEST region - from map left edge to intersection
-            new SpawnRegion(0, intersection.minY, intersection.minX, intersection.maxY + 1, 1, 0, "WEST"),
-            // Nam fix: SOUTH region - from intersection to map bottom edge
-            new SpawnRegion(intersection.minX, intersection.maxY + 1, intersection.maxX + 1, height, 0, -1, "SOUTH"),
-            // Nam fix: EAST region - from intersection to map right edge
-            new SpawnRegion(intersection.maxX + 1, intersection.minY, width, intersection.maxY + 1, -1, 0, "EAST")
+                new SpawnRegion(intersection.minX, 0, intersection.maxX + 1, intersection.minY, 0, 1, "NORTH"),
+                new SpawnRegion(0, intersection.minY, intersection.minX, intersection.maxY + 1, 1, 0, "WEST"),
+                new SpawnRegion(intersection.minX, intersection.maxY + 1, intersection.maxX + 1, height, 0, -1,
+                        "SOUTH"),
+                new SpawnRegion(intersection.maxX + 1, intersection.minY, width, intersection.maxY + 1, -1, 0, "EAST")
         };
     }
 
-    // Nam fix: Pick spawn point at map edge (where vehicles naturally enter from outside)
-    private int[] pickSpawnPoint(SpawnRegion region) {
-        // Nam fix: Spawn vehicles at the map edge based on their region
+    private int[] pickSpawnPoint(SpawnRegion region, VehicleType type) {
+        int width = mapSystem.getMap().getWidth();
+        int height = mapSystem.getMap().getHeight();
+
+        int spawnMinX = 0, spawnMaxX = 0;
+        int spawnMinY = 0, spawnMaxY = 0;
+
+        int lateralSize = type.getHeightCells();
+        int startShift = lateralSize / 2;
+        int endShift = (lateralSize - 1) / 2;
+
         if ("NORTH".equals(region.name)) {
-            // Nam fix: NORTH region - spawn at map top edge (y=0), moving south
-            return findEdgeSpawnPoint(region.minX, region.maxX, 0, 1, region.name);
+            spawnMinX = 17 + startShift;
+            spawnMaxX = 24 - endShift;
+            spawnMinY = 0;
+            spawnMaxY = 0;
         } else if ("SOUTH".equals(region.name)) {
-            // Nam fix: SOUTH region - spawn at map bottom edge (y=height-1), moving north
-            int mapHeight = mapSystem.getMap().getHeight();
-            return findEdgeSpawnPoint(region.minX, region.maxX, mapHeight - 1, mapHeight, region.name);
+            spawnMinX = 25 + startShift;
+            spawnMaxX = 32 - endShift;
+            spawnMinY = height - 1;
+            spawnMaxY = height - 1;
         } else if ("WEST".equals(region.name)) {
-            // Nam fix: WEST region - spawn at map left edge (x=0), moving east
-            return findEdgeSpawnPoint(0, 1, region.minY, region.maxY, region.name);
-        } else { // EAST
-            // Nam fix: EAST region - spawn at map right edge (x=width-1), moving west
-            int mapWidth = mapSystem.getMap().getWidth();
-            return findEdgeSpawnPoint(mapWidth - 1, mapWidth, region.minY, region.maxY, region.name);
+            spawnMinX = 0;
+            spawnMaxX = 0;
+            spawnMinY = 18 + startShift;
+            spawnMaxY = 25 - endShift;
+        } else if ("EAST".equals(region.name)) {
+            spawnMinX = width - 1;
+            spawnMaxX = width - 1;
+            spawnMinY = 10 + startShift;
+            spawnMaxY = 17 - endShift;
+        } else {
+            return null;
         }
-    }
 
-    // Nam fix: Find valid spawn point along the edge
-    private int[] findEdgeSpawnPoint(int minX, int maxX, int minY, int maxY, String regionName) {
-        int attempts = 20;
+        for (int i = 0; i < 10; i++) {
+            int x = spawnMinX + (int) (Math.random() * (spawnMaxX - spawnMinX + 1));
+            int y = spawnMinY + (int) (Math.random() * (spawnMaxY - spawnMinY + 1));
 
-        // Nam fix: Try random positions along the edge first
-        for (int i = 0; i < attempts; i++) {
-            int x = minX + (int) (Math.random() * Math.max(1, maxX - minX));
-            int y = minY + (int) (Math.random() * Math.max(1, maxY - minY));
-
-            if (mapSystem.getMap().isValid(x, y) && mapSystem.getMap().isDriveable(x, y)
-                    && isCorrectLaneForRegion(x, y, regionName)) {
+            if (mapSystem.getMap().isValid(x, y) &&
+                    (mapSystem.getMap().isDriveable(x, y) || mapSystem.getMap().isStopLine(x, y))) {
                 return new int[] { x, y };
             }
         }
 
-        // Nam fix: Fallback - scan edge systematically
-        for (int y = minY; y < maxY; y++) {
-            for (int x = minX; x < maxX; x++) {
-                if (mapSystem.getMap().isValid(x, y) && mapSystem.getMap().isDriveable(x, y)
-                        && isCorrectLaneForRegion(x, y, regionName)) {
+        for (int x = spawnMinX; x <= spawnMaxX; x++) {
+            for (int y = spawnMinY; y <= spawnMaxY; y++) {
+                if (mapSystem.getMap().isValid(x, y) &&
+                        (mapSystem.getMap().isDriveable(x, y) || mapSystem.getMap().isStopLine(x, y))) {
                     return new int[] { x, y };
                 }
             }
         }
 
         return null;
-    }
-
-    // Nam add: Ensure spawn point is on the correct side of the road for region direction
-    private boolean isCorrectLaneForRegion(int x, int y, String regionName) {
-        double centerX = mapSystem.getMap().getIntersectionCenterX();
-        double centerY = mapSystem.getMap().getIntersectionCenterY();
-        if ("NORTH".equals(regionName)) {
-            // Nam add: Vehicles from NORTH move south, keep to west side of vertical road
-            return x < Math.floor(centerX);
-        }
-        if ("SOUTH".equals(regionName)) {
-            // Nam add: Vehicles from SOUTH move north, keep to east side of vertical road
-            return x >= Math.ceil(centerX);
-        }
-        if ("WEST".equals(regionName)) {
-            // Nam add: Vehicles from WEST move east, keep to south side of horizontal road
-            return y >= Math.ceil(centerY);
-        }
-        // Nam add: EAST region vehicles move west, keep to north side of horizontal road
-        return y < Math.floor(centerY);
     }
 }

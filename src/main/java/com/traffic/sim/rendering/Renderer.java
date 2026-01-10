@@ -23,26 +23,6 @@ public class Renderer {
     public Renderer(Pane canvas) {
         this.canvas = canvas;
         this.spriteLoader = new SpriteLoader();
-
-        // Add click listener for inspector
-        this.canvas.setOnMouseClicked(event -> {
-            if (currentSimulationManager == null)
-                return;
-
-            Vehicle v = currentSimulationManager.findVehicleAt(event.getX(), event.getY(), 20); // 20px radius
-            if (v != null) {
-                System.out.println("=== INSPECTOR ===");
-                System.out.println("ID: " + v.getId());
-                System.out.println("Type: " + v.getType());
-                System.out.println(
-                        "Pos: (" + String.format("%.2f", v.getX()) + ", " + String.format("%.2f", v.getY()) + ")");
-                System.out.println("Speed: " + String.format("%.2f", v.getSpeed()));
-                System.out.println("Direction: " + v.getDirection());
-                System.out.println("Planned Turn: " + v.getPlannedTurn());
-                System.out.println("Stopped at Light: " + v.isStoppedAtLight());
-                System.out.println("=================");
-            }
-        });
     }
 
     private SimulationManager currentSimulationManager;
@@ -51,8 +31,7 @@ public class Renderer {
 
     public void render(SimulationManager simulationManager) {
         this.currentSimulationManager = simulationManager;
-        // Clear previous frame (Optimization: move nodes instead of clearing, but
-        // clearing is simpler for starter)
+
         canvas.getChildren().clear();
 
         // Draw Map
@@ -75,8 +54,6 @@ public class Renderer {
     }
 
     private void drawMap(Map map) {
-        // Draw background image
-        // Assuming path is assets/map/map.png relative to resources
         javafx.scene.image.Image mapImage = spriteLoader.getSprite("/assets/map/map.png");
         if (mapImage != null) {
             javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView(mapImage);
@@ -84,7 +61,6 @@ public class Renderer {
             imageView.setFitHeight(720);
             canvas.getChildren().add(imageView);
         } else {
-            // Fallback if image fails to load
             Text errorText = new Text("Error loading map");
             errorText.setFill(Color.RED);
             errorText.setStyle("-fx-font-size: 28px; -fx-font-weight: bold;");
@@ -133,28 +109,19 @@ public class Renderer {
 
         if (carImage != null) {
             javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView(carImage);
-            imageView.setFitWidth(v.getWidth());
-            imageView.setFitHeight(v.getHeight());
 
-            // Center the image on the entity's position
-            // x, y are center coordinates in simulation, converted to top-left for
-            // rendering
-            // Actually, usually x,y are top-left or center. Let's assume x,y are logical
-            // grid coordinates
-            // and we render centered on that tile or starting from that tile.
-            // Previous code: rect.setX((v.getX() * TILE_SIZE) - (TILE_SIZE * 0.4) +
-            // (TILE_SIZE / 2.0));
-            // Let's standardise: v.getX() * TILE_SIZE is the pixel position of the tile.
-            // We want to center the vehicle on this position.
+            double widthPx = v.getWidth() * TILE_SIZE;
+            double heightPx = v.getHeight() * TILE_SIZE;
+
+            imageView.setFitWidth(widthPx);
+            imageView.setFitHeight(heightPx);
 
             double pixelX = v.getX() * TILE_SIZE;
             double pixelY = v.getY() * TILE_SIZE;
 
-            // Center alignment: subtract half width/height
-            imageView.setX(pixelX - v.getWidth() / 2.0 + TILE_SIZE / 2.0);
-            imageView.setY(pixelY - v.getHeight() / 2.0 + TILE_SIZE / 2.0);
+            imageView.setX(pixelX - widthPx / 2.0);
+            imageView.setY(pixelY - heightPx / 2.0);
 
-            // Apply rotation from vehicle
             imageView.setRotate(v.getRotation());
 
             canvas.getChildren().add(imageView);
@@ -175,7 +142,6 @@ public class Renderer {
             imageView.setX(pixelX - p.getWidth() / 2.0 + TILE_SIZE / 2.0);
             imageView.setY(pixelY - p.getHeight() / 2.0 + TILE_SIZE / 2.0);
 
-            // Apply rotation
             imageView.setRotate(p.getRotation());
 
             canvas.getChildren().add(imageView);
@@ -183,7 +149,6 @@ public class Renderer {
     }
 
     private void drawTrafficLight(TrafficLight tl) {
-        // Hardcoded configurations for each traffic light
         String id = tl.getId();
 
         // Vehicle Lights Configuration
@@ -210,7 +175,6 @@ public class Renderer {
 
     private void drawTrafficLightBox(double x, double y, double width, double height,
             boolean isVertical, TrafficLight.State state, boolean isVehicle) {
-        // Draw the container box with rounded corners
         Rectangle box = new Rectangle(x, y, width, height);
         box.setFill(Color.web("#3B3B3B"));
         double arcSize = Math.min(width, height);
@@ -218,13 +182,11 @@ public class Renderer {
         box.setArcHeight(arcSize);
         canvas.getChildren().add(box);
 
-        // Light properties
         double lightSize = 15;
         double spacing = isVehicle ? (isVertical ? (height - 3 * lightSize) / 4 : (width - 3 * lightSize) / 4)
                 : (isVertical ? (height - 2 * lightSize) / 3 : (width - 2 * lightSize) / 3);
 
         if (isVehicle) {
-            // Vehicle: 3 lights (Red, Yellow, Green)
             if (isVertical) {
                 // Top to Bottom: Red -> Yellow -> Green
                 drawLight(x + width / 2, y + spacing + lightSize / 2, lightSize, Color.RED,
@@ -243,15 +205,12 @@ public class Renderer {
                         state == TrafficLight.State.GREEN);
             }
         } else {
-            // Pedestrian: 2 lights (Red, Green)
             if (isVertical) {
-                // Top to Bottom: Red -> Green
                 drawLight(x + width / 2, y + spacing + lightSize / 2, lightSize, Color.RED,
                         state == TrafficLight.State.RED);
                 drawLight(x + width / 2, y + 2 * spacing + 1.5 * lightSize, lightSize, Color.web("#34C759"),
                         state == TrafficLight.State.GREEN);
             } else {
-                // Left to Right: Red -> Green
                 drawLight(x + spacing + lightSize / 2, y + height / 2, lightSize, Color.RED,
                         state == TrafficLight.State.RED);
                 drawLight(x + 2 * spacing + 1.5 * lightSize, y + height / 2, lightSize, Color.web("#34C759"),

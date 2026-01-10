@@ -128,7 +128,6 @@ public class TrafficLightSystem {
 
     public void loadDefaultScenario() {
         setDurations(4, 2, 5); // Example: 4s Green, 2s Yellow, 5s Red
-        System.out.println("LOG: Loaded DEFAULT Scenario");
     }
 
     // --- UI INTERACTION API ---
@@ -155,7 +154,6 @@ public class TrafficLightSystem {
         ewController.reset(Phase.RED);
 
         updateLights();
-        System.out.println("LOG: Strict Config Applied. NS=GREEN, EW=RED. Timers Reset.");
     }
 
     // --- MAIN SIMULATION LOOP ---
@@ -251,8 +249,8 @@ public class TrafficLightSystem {
     private void initializeLights() {
         // Init Vehicles
         trafficLights.add(new TrafficLight("TL_V_NS_1", 24, 16, TrafficLightType.VEHICLE, Direction.NS, Region.NORTH));
-        trafficLights.add(new TrafficLight("TL_V_NS_2", 26, 20, TrafficLightType.VEHICLE, Direction.NS, Region.WEST));
-        trafficLights.add(new TrafficLight("TL_V_EW_1", 22, 19, TrafficLightType.VEHICLE, Direction.EW, Region.SOUTH));
+        trafficLights.add(new TrafficLight("TL_V_NS_2", 26, 20, TrafficLightType.VEHICLE, Direction.NS, Region.SOUTH));
+        trafficLights.add(new TrafficLight("TL_V_EW_1", 22, 19, TrafficLightType.VEHICLE, Direction.EW, Region.WEST));
         trafficLights.add(new TrafficLight("TL_V_EW_2", 28, 17, TrafficLightType.VEHICLE, Direction.EW, Region.EAST));
         // Init Pedestrians
         trafficLights
