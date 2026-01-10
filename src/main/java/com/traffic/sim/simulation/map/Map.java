@@ -6,7 +6,7 @@ import com.traffic.sim.simulation.entities.Region;
  * Represents the simulation grid.
  * TileType values:
  * - 0 = ROAD (đường xe chạy)
- * - 1 = BLOCKED (vùng cấm - tòa nhà, cây cối)
+ * - 1 = BLOCKED (vùng cấm - người or xe đang chiếm chỗ)
  * - 2 = SIDEWALK (vỉa hè - người đi bộ có thể đi)
  * - 3 = CROSSWALK (vạch kẻ đường - người đi bộ qua đường)
  * - 4 = STOP_LINE (vạch dừng đèn đỏ)
@@ -45,32 +45,17 @@ public class Map {
             }
         }
 
-        // Bước 2: Đặt 4 góc là BLOCKED (tòa nhà/vùng cấm)
+        // Bước 2: Đặt 4 góc là SIDEWALK (bao gồm cả tòa nhà cũ)
         // Góc trên bên trái: x=0-16, y=0-9
-        fillArea(0, 0, 16, 9, BLOCKED);
+        fillArea(0, 0, 16, 9, SIDEWALK);
         // Góc trên bên phải: x=33-49, y=0-9
-        fillArea(33, 0, 49, 9, BLOCKED);
+        fillArea(33, 0, 49, 9, SIDEWALK);
         // Góc dưới bên trái: x=0-16, y=26-35
-        fillArea(0, 26, 16, 35, BLOCKED);
+        fillArea(0, 26, 16, 35, SIDEWALK);
         // Góc dưới bên phải: x=33-49, y=26-35
-        fillArea(33, 26, 49, 35, BLOCKED);
+        fillArea(33, 26, 49, 35, SIDEWALK);
 
-        // Bước 3: Đặt vỉa hè (SIDEWALK) - viền trong của các góc
-        // Góc trên bên trái
-        fillArea(15, 0, 16, 9, SIDEWALK); // cạnh phải
-        fillArea(0, 8, 14, 9, SIDEWALK); // cạnh dưới
-
-        // Góc trên bên phải
-        fillArea(33, 0, 34, 9, SIDEWALK); // cạnh trái
-        fillArea(35, 8, 49, 9, SIDEWALK); // cạnh dưới
-
-        // Góc dưới bên trái
-        fillArea(0, 26, 14, 27, SIDEWALK); // cạnh trên
-        fillArea(15, 26, 16, 35, SIDEWALK); // cạnh phải
-
-        // Góc dưới bên phải
-        fillArea(35, 26, 49, 27, SIDEWALK); // cạnh trên
-        fillArea(33, 26, 34, 35, SIDEWALK); // cạnh trái
+        // Bước 3: Đã gộp vào Bước 2
 
         // Bước 4: Vạch kẻ đường cho người đi bộ (CROSSWALK)
         // Vạch phía trên (ngang): x=17-32, y=7-8
@@ -83,25 +68,24 @@ public class Map {
         fillArea(34, 10, 35, 25, CROSSWALK);
 
         // Bước 5: Vạch chia làn đường (LANE_DIVIDER)
-        // Phía trên: x=25, y=0-5 (nhưng y=0-5 đã là blocked, nên y=0-6 trong phần
-        // đường)
-        fillArea(24, 0, 25, 6, LANE_DIVIDER);
+        // Phía trên: x=25, y=0-5
+        fillArea(25, 0, 25, 6, LANE_DIVIDER);
         // Phía dưới: x=24, y=30-35
-        fillArea(24, 29, 25, 35, LANE_DIVIDER);
+        fillArea(24, 30, 24, 35, LANE_DIVIDER);
         // Phía trái: x=0-12, y=17
-        fillArea(0, 17, 13, 18, LANE_DIVIDER);
+        fillArea(0, 17, 12, 17, LANE_DIVIDER);
         // Phía phải: x=37-49, y=18
-        fillArea(36, 17, 49, 18, LANE_DIVIDER);
+        fillArea(37, 18, 49, 18, LANE_DIVIDER);
 
         // Bước 6: Vạch dừng đèn đỏ (STOP_LINE)
         // Phía trên: x=17-25, y=5
-        fillArea(17, 5, 25, 6, STOP_LINE);
+        fillArea(17, 5, 25, 5, STOP_LINE);
         // Phía dưới: x=24-32, y=30
-        fillArea(24, 29, 32, 30, STOP_LINE);
+        fillArea(24, 30, 32, 30, STOP_LINE);
         // Phía trái: x=12, y=17-25
-        fillArea(12, 17, 13, 25, STOP_LINE);
+        fillArea(12, 17, 12, 25, STOP_LINE);
         // Phía phải: x=37, y=10-18
-        fillArea(36, 10, 37, 18, STOP_LINE);
+        fillArea(37, 10, 37, 18, STOP_LINE);
     }
 
     private void fillArea(int x1, int y1, int x2, int y2, int tileType) {
@@ -119,6 +103,13 @@ public class Map {
             return grid[y][x];
         }
         return BLOCKED;
+    }
+
+    // Nam add: Allow updating grid for dynamic obstacles
+    public void setTileType(int x, int y, int type) {
+        if (isValidCoordinate(x, y)) {
+            grid[y][x] = type;
+        }
     }
 
     public boolean isValidCoordinate(int x, int y) {
@@ -345,24 +336,39 @@ public class Map {
     public double[] getStopLinePosition(Region region) {
         switch (region) {
             case NORTH:
-                // Stop line phía trên: x=17-25, y=5-6
-                return new double[]{21.0, 6.0}; // center of stop line
+                // Stop line phía trên: x=17-25, y=5
+                return new double[] { 21.0, 5.5 }; // center of stop line
             case SOUTH:
-                // Stop line phía dưới: x=24-32, y=29-30  
-                return new double[]{28.0, 29.0}; // center of stop line
+                // Stop line phía dưới: x=24-32, y=30
+                return new double[] { 28.0, 30.5 }; // center of stop line
             case WEST:
-                // Stop line phía trái: x=12-13, y=17-25
-                return new double[]{13.0, 21.0}; // center of stop line
+                // Stop line phía trái: x=12, y=17-25
+                return new double[] { 12.5, 21.0 }; // center of stop line
             case EAST:
-                // Stop line phía phải: x=36-37, y=10-18
-                return new double[]{36.0, 14.0}; // center of stop line
+                // Stop line phía phải: x=37, y=10-18
+                return new double[] { 37.5, 14.0 }; // center of stop line
             default:
-                return new double[]{0.0, 0.0};
+                return new double[] { 0.0, 0.0 };
         }
     }
 
     // Check if a position is on stop line
     public boolean isStopLine(int x, int y) {
         return getTileType(x, y) == STOP_LINE;
+    }
+
+    /**
+     * Debug method to print the grid to console.
+     * 0: ROAD, 1: BLOCKED, 2: SIDEWALK, 3: CROSSWALK, 4: STOP_LINE, 5: LANE_DIVIDER
+     */
+    public void printGrid() {
+        System.out.println("=== MAP GRID DEBUG ===");
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                System.out.print(grid[y][x] + " ");
+            }
+            System.out.println();
+        }
+        System.out.println("======================");
     }
 }

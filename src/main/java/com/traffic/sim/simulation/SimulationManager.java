@@ -38,8 +38,14 @@ public class SimulationManager {
     public void update() {
         // Nam adding: Use enhanced update method with map integration
         vehicleManager.updateWithMap(mapSystem.getMap());
-        pedestrianManager.updateWithMap(mapSystem.getMap()); // Use map-aware pedestrian update
+        pedestrianManager.updateWithMap(mapSystem.getMap(), trafficLightSystem); // Use map-aware pedestrian update with
+                                                                                 // strict TLS check
+
         trafficLightSystem.update();
+    }
+
+    public void updateTrafficLightTimings(int green, int yellow, int red) {
+        trafficLightSystem.setDurations(green, yellow, red);
     }
 
     public void spawnVehicle() {
@@ -57,6 +63,17 @@ public class SimulationManager {
 
     // Getters for Renderer to read state (ReadOnly ideally, but for simplicity
     // returning lists)
+
+    public Vehicle findVehicleAt(double x, double y, double radius) {
+        for (Vehicle v : vehicleManager.getVehicles()) {
+            double dx = v.getX() - x;
+            double dy = v.getY() - y;
+            if (dx * dx + dy * dy < radius * radius) {
+                return v;
+            }
+        }
+        return null;
+    }
 
     public List<Vehicle> getVehicles() {
         return vehicleManager.getVehicles();

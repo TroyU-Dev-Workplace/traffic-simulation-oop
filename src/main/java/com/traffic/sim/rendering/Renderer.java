@@ -24,9 +24,33 @@ public class Renderer {
         this.canvas = canvas;
         this.spriteLoader = new SpriteLoader();
 
+        // Add click listener for inspector
+        this.canvas.setOnMouseClicked(event -> {
+            if (currentSimulationManager == null)
+                return;
+
+            Vehicle v = currentSimulationManager.findVehicleAt(event.getX(), event.getY(), 20); // 20px radius
+            if (v != null) {
+                System.out.println("=== INSPECTOR ===");
+                System.out.println("ID: " + v.getId());
+                System.out.println("Type: " + v.getType());
+                System.out.println(
+                        "Pos: (" + String.format("%.2f", v.getX()) + ", " + String.format("%.2f", v.getY()) + ")");
+                System.out.println("Speed: " + String.format("%.2f", v.getSpeed()));
+                System.out.println("Direction: " + v.getDirection());
+                System.out.println("Planned Turn: " + v.getPlannedTurn());
+                System.out.println("Stopped at Light: " + v.isStoppedAtLight());
+                System.out.println("=================");
+            }
+        });
     }
 
+    private SimulationManager currentSimulationManager;
+
+    public static boolean IS_DEBUG_MODE = true;
+
     public void render(SimulationManager simulationManager) {
+        this.currentSimulationManager = simulationManager;
         // Clear previous frame (Optimization: move nodes instead of clearing, but
         // clearing is simpler for starter)
         canvas.getChildren().clear();
@@ -68,6 +92,39 @@ public class Renderer {
             errorText.setLayoutY(360);
 
             canvas.getChildren().add(errorText);
+        }
+
+        if (IS_DEBUG_MODE) {
+            drawDebugOverlay(map);
+        }
+    }
+
+    private void drawDebugOverlay(Map map) {
+        for (int y = 0; y < map.getHeight(); y++) {
+            for (int x = 0; x < map.getWidth(); x++) {
+                double pixelX = x * TILE_SIZE;
+                double pixelY = y * TILE_SIZE;
+
+                Rectangle rect = new Rectangle(pixelX, pixelY, TILE_SIZE, TILE_SIZE);
+                rect.setFill(null);
+                rect.setStroke(Color.CYAN);
+                rect.setStrokeWidth(0.5);
+
+                int type = map.getTileType(x, y);
+                // Highlight generic blocked areas vs roads
+                if (type == Map.BLOCKED) {
+                    rect.setStroke(Color.RED);
+                }
+
+                // Draw tile type number
+                Text text = new Text(String.valueOf(type));
+                text.setX(pixelX + 5);
+                text.setY(pixelY + 15);
+                text.setFill(Color.YELLOW);
+                text.setStyle("-fx-font-size: 8px;");
+
+                canvas.getChildren().addAll(rect, text);
+            }
         }
     }
 
@@ -117,6 +174,9 @@ public class Renderer {
 
             imageView.setX(pixelX - p.getWidth() / 2.0 + TILE_SIZE / 2.0);
             imageView.setY(pixelY - p.getHeight() / 2.0 + TILE_SIZE / 2.0);
+
+            // Apply rotation
+            imageView.setRotate(p.getRotation());
 
             canvas.getChildren().add(imageView);
         }
@@ -171,7 +231,7 @@ public class Renderer {
                         state == TrafficLight.State.RED);
                 drawLight(x + width / 2, y + 2 * spacing + 1.5 * lightSize, lightSize, Color.YELLOW,
                         state == TrafficLight.State.YELLOW);
-                drawLight(x + width / 2, y + 3 * spacing + 2.5 * lightSize, lightSize, Color.GREEN,
+                drawLight(x + width / 2, y + 3 * spacing + 2.5 * lightSize, lightSize, Color.web("#34C759"),
                         state == TrafficLight.State.GREEN);
             } else {
                 // Left to Right: Red -> Yellow -> Green
@@ -179,7 +239,7 @@ public class Renderer {
                         state == TrafficLight.State.RED);
                 drawLight(x + 2 * spacing + 1.5 * lightSize, y + height / 2, lightSize, Color.YELLOW,
                         state == TrafficLight.State.YELLOW);
-                drawLight(x + 3 * spacing + 2.5 * lightSize, y + height / 2, lightSize, Color.GREEN,
+                drawLight(x + 3 * spacing + 2.5 * lightSize, y + height / 2, lightSize, Color.web("#34C759"),
                         state == TrafficLight.State.GREEN);
             }
         } else {
@@ -188,13 +248,13 @@ public class Renderer {
                 // Top to Bottom: Red -> Green
                 drawLight(x + width / 2, y + spacing + lightSize / 2, lightSize, Color.RED,
                         state == TrafficLight.State.RED);
-                drawLight(x + width / 2, y + 2 * spacing + 1.5 * lightSize, lightSize, Color.GREEN,
+                drawLight(x + width / 2, y + 2 * spacing + 1.5 * lightSize, lightSize, Color.web("#34C759"),
                         state == TrafficLight.State.GREEN);
             } else {
                 // Left to Right: Red -> Green
                 drawLight(x + spacing + lightSize / 2, y + height / 2, lightSize, Color.RED,
                         state == TrafficLight.State.RED);
-                drawLight(x + 2 * spacing + 1.5 * lightSize, y + height / 2, lightSize, Color.GREEN,
+                drawLight(x + 2 * spacing + 1.5 * lightSize, y + height / 2, lightSize, Color.web("#34C759"),
                         state == TrafficLight.State.GREEN);
             }
         }

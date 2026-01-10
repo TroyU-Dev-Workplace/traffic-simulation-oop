@@ -19,176 +19,193 @@ public class TrafficLightSystem {
 
     // --- TIMING CONFIGURATION (Frames) ---
     // calculated based on a fixed 60 FPS update loop.
-    private int greenDuration;
-    private int yellowDuration;
-    private int redBuffer; // All-Red phase duration for safety clearance
+    // 60 ticks = 1 second.
+    // Default Scenario: FAST (for testing)
+    // Green: 4s (240 ticks) | Yellow: 2s (120 ticks) | Buffer: 1s (60 ticks)
+    private static final int DEFAULT_GREEN = 240;
+    private static final int DEFAULT_YELLOW = 120;
+    private static final int DEFAULT_BUFFER = 60; // All-Red buffer
 
-    private int timer;
-    private Phase currentPhase;
+    // Independent Controllers for each direction
+    private final DirectionController nsController;
+    private final DirectionController ewController;
 
-    // State Machine: Defines the cycle sequence
-    private enum Phase {
-        NS_GREEN, NS_YELLOW, ALL_RED_1,
-        EW_GREEN, EW_YELLOW, ALL_RED_2
+    // Inner Class: Independent Traffic Controller
+    // Manages the phase cycle for a single direction strictly by timer.
+    private class DirectionController {
+        private Phase phase;
+        private int timer;
+
+        private int greenDuration;
+        private int yellowDuration;
+        private int redDuration; // Current Red duration (may vary if we want asymmetry, but standardized here)
+
+        public DirectionController(Phase startPhase, int g, int y, int r) {
+            this.phase = startPhase;
+            this.greenDuration = g;
+            this.yellowDuration = y;
+            this.redDuration = r;
+            this.timer = 0;
+        }
+
+        public void update() {
+            timer++;
+            switch (phase) {
+                case GREEN:
+                    if (timer > greenDuration)
+                        switchPhase(Phase.YELLOW);
+                    break;
+                case YELLOW:
+                    if (timer > yellowDuration)
+                        switchPhase(Phase.RED);
+                    break;
+                case RED:
+                    if (timer > redDuration)
+                        switchPhase(Phase.GREEN);
+                    break;
+            }
+        }
+
+        private void switchPhase(Phase next) {
+            this.phase = next;
+            this.timer = 0;
+        }
+
+        public void setDurations(int g, int y, int r) {
+            this.greenDuration = g;
+            this.yellowDuration = y;
+            this.redDuration = r;
+        }
+
+        public void reset(Phase startPhase) {
+            this.phase = startPhase;
+            this.timer = 0;
+        }
+
+        public State getState() {
+            switch (phase) {
+                case GREEN:
+                    return State.GREEN;
+                case YELLOW:
+                    return State.YELLOW;
+                default:
+                    return State.RED;
+            }
+        }
     }
 
-    private static final int GREEN_DURATION = 150;
-    private static final int YELLOW_DURATION = 30;
-    private static final int RED_BUFFER = 20;
+    // Simplified Phase Enum for single direction
+    private enum Phase {
+        GREEN, YELLOW, RED
+    }
 
     public TrafficLightSystem() {
         this.trafficLights = new ArrayList<>();
         initializeLights();
 
-        // Initialize state
-        this.currentPhase = Phase.NS_GREEN;
-        this.timer = 0;
+        // Initialize Independent Controllers
+        // NS Starts GREEN
+        // EW Starts RED
+        // Note: For EW to start in Red, we calculate its RED duration.
+        // In this strict model, Red duration = Green + Yellow + Buffer (of the OTHER
+        // direction usually)
+        // OR simply the UI config for "Red".
+        // User Requirement: "Every light phase must run for exactly the number of
+        // seconds provided by the UI input."
+        // So we use the Configured Red Duration.
 
-        // Load the default realistic scenario on startup
+        this.nsController = new DirectionController(Phase.GREEN, DEFAULT_GREEN, DEFAULT_YELLOW,
+                DEFAULT_BUFFER + DEFAULT_GREEN + DEFAULT_YELLOW);
+        this.ewController = new DirectionController(Phase.RED, DEFAULT_GREEN, DEFAULT_YELLOW,
+                DEFAULT_BUFFER + DEFAULT_GREEN + DEFAULT_YELLOW);
+
+        // Initial Defaults Load (just to sync standard values if needed, mostly covered
+        // by constructor)
         loadDefaultScenario();
     }
 
     // --- SCENARIO MANAGEMENT ---
 
-    // Scenario 1: Realistic
-    // Balanced settings for standard traffic flow.
-    // Green: 15s | Yellow: 3s | Buffer: 2s
     public void loadDefaultScenario() {
-        setDurations(15, 3, 2);
-        System.out.println("LOG: Loaded REALISTIC Scenario (15s Green / 3s Yellow / 2s Buffer)");
-    }
-
-    // Scenario 2: Short Cycle
-    // Optimized for debugging and quick testing.
-    // Green: 8s | Yellow: 2s
-    public void loadShortCycleScenario() {
-        setDurations(8, 2, 1);
-        System.out.println("LOG: Loaded FAST Scenario (8s Green / 2s Yellow / 1s Buffer)");
-    }
-
-    // Scenario 3: Long Cycle
-    // Designed to flush heavy traffic volume.
-    // Green: 25s | Yellow: 4s
-    public void loadLongCycleScenario() {
-        setDurations(25, 4, 2);
-        System.out.println("LOG: Loaded HEAVY TRAFFIC Scenario (25s Green / 4s Yellow / 2s Buffer)");
+        setDurations(4, 2, 5); // Example: 4s Green, 2s Yellow, 5s Red
+        System.out.println("LOG: Loaded DEFAULT Scenario");
     }
 
     // --- UI INTERACTION API ---
 
     /**
-     * Public API exposed for the UI layer (Person 1).
+     * Public API exposed for the UI layer.
      * Allows dynamic reconfiguration of signal timings.
-     * Resets the timer immediately to apply changes.
+     * Resets both controllers immediately to apply strict timing.
      */
-    public void setDurations(int greenSec, int yellowSec, int redBufferSec) {
-        this.greenDuration = greenSec * 60;
-        this.yellowDuration = yellowSec * 60;
-        this.redBuffer = redBufferSec * 60;
+    public void setDurations(int greenSec, int yellowSec, int redSec) {
+        // Convert to frames
+        int g = greenSec * 60;
+        int y = yellowSec * 60;
+        int r = redSec * 60;
 
-        // Reset logic to apply new config instantly
-        this.timer = 0;
-        this.currentPhase = Phase.NS_GREEN;
+        // Update settings
+        nsController.setDurations(g, y, r);
+        ewController.setDurations(g, y, r);
+
+        // Reset to initial deterministic state
+        // NS: Starts at Green
+        nsController.reset(Phase.GREEN);
+        // EW: Starts at Red
+        ewController.reset(Phase.RED);
+
         updateLights();
-        System.out.println("LOG: Custom Config Applied by UI");
+        System.out.println("LOG: Strict Config Applied. NS=GREEN, EW=RED. Timers Reset.");
     }
 
     // --- MAIN SIMULATION LOOP ---
 
     public void update() {
-        timer++;
+        // Update both controllers independently
+        nsController.update();
+        ewController.update();
 
-        // Ensure visual state is always synced with logical state
+        // Sync visual state
         updateLights();
-
-        // Time-based State Machine transitions
-        switch (currentPhase) {
-            case NS_GREEN:
-                if (timer > greenDuration)
-                    switchPhase(Phase.NS_YELLOW);
-                break;
-            case NS_YELLOW:
-                if (timer > yellowDuration)
-                    switchPhase(Phase.ALL_RED_1);
-                break;
-            case ALL_RED_1: // Safety Buffer 1
-                if (timer > redBuffer)
-                    switchPhase(Phase.EW_GREEN);
-                break;
-            case EW_GREEN:
-                if (timer > greenDuration)
-                    switchPhase(Phase.EW_YELLOW);
-                break;
-            case EW_YELLOW:
-                if (timer > yellowDuration)
-                    switchPhase(Phase.ALL_RED_2);
-                break;
-            case ALL_RED_2: // Safety Buffer 2
-                if (timer > redBuffer)
-                    switchPhase(Phase.NS_GREEN);
-                break;
-        }
-    }
-
-    private void switchPhase(Phase nextPhase) {
-        this.currentPhase = nextPhase;
-        this.timer = 0;
     }
 
     // --- LIGHT SYNCHRONIZATION LOGIC ---
 
     private void updateLights() {
-        switch (currentPhase) {
-            case NS_GREEN:
-                setPhaseColors(Direction.NS, State.GREEN);
-                break;
-            case NS_YELLOW:
-                setPhaseColors(Direction.NS, State.YELLOW);
-                break;
-            case ALL_RED_1:
-            case ALL_RED_2:
-                setAllRed(); // Safety: Stop all traffic
-                break;
-            case EW_GREEN:
-                setPhaseColors(Direction.EW, State.GREEN);
-                break;
-            case EW_YELLOW:
-                setPhaseColors(Direction.EW, State.YELLOW);
-                break;
-        }
+        // Get strict states from independent controllers
+        State nsState = nsController.getState();
+        State ewState = ewController.getState();
+
+        // Apply to NS Lights
+        setPhaseColors(Direction.NS, nsState);
+
+        // Apply to EW Lights
+        setPhaseColors(Direction.EW, ewState);
     }
 
     private void setPhaseColors(Direction activeDir, State activeState) {
         for (TrafficLight tl : trafficLights) {
-            // Logic for Vehicles: Follow the active direction
+            // Filter: Only touch lights belonging to the active direction
+            if (tl.getDirection() != activeDir) {
+                continue;
+            }
+
+            // Logic for Vehicles: Follow the active state directly
             if (tl.getType() == TrafficLightType.VEHICLE) {
-                if (tl.getDirection() == activeDir) {
-                    tl.setState(activeState);
-                } else {
-                    tl.setState(State.RED);
-                }
+                tl.setState(activeState);
             }
-            // Logic for Pedestrians: Inverse synchronization
-            // Pedestrians only walk when parallel vehicle traffic stops.
+            // Logic for Pedestrians:
+            // STRICT INVERSE LOGIC:
+            // 1. If Same Direction Vehicle is GREEN -> Pedestrian RED.
+            // 2. If Same Direction Vehicle is YELLOW or RED -> Pedestrian GREEN.
+            // (Pedestrians cross when parallel traffic is STOPPING or STOPPED)
             else if (tl.getType() == TrafficLightType.PEDESTRIAN) {
-                boolean isVehicleMovingHere = (tl.getDirection() == activeDir);
-
-                if (isVehicleMovingHere) {
-                    tl.setState(State.RED); // Stop if cars are moving
+                // Since strictly same direction, simplify logic:
+                if (activeState == State.GREEN) {
+                    tl.setState(State.RED); // Vehicle GREEN -> Ped RED
                 } else {
-                    tl.setState(State.GREEN); // Go if cars are stopped
+                    tl.setState(State.GREEN); // Vehicle YELLOW/RED -> Ped GREEN
                 }
-            }
-        }
-    }
-
-    private void setAllRed() {
-        for (TrafficLight tl : trafficLights) {
-            tl.setState(State.RED);
-            // Critical: Ensure pedestrians also wait during the All-Red buffer
-            // to allow clearing of the intersection.
-            if (tl.getType() == TrafficLightType.PEDESTRIAN) {
-                tl.setState(State.RED);
             }
         }
     }
@@ -211,6 +228,15 @@ public class TrafficLightSystem {
     public State getPedestrianSignal(Direction dir) {
         for (TrafficLight tl : trafficLights) {
             if (tl.getType() == TrafficLightType.PEDESTRIAN && tl.getDirection() == dir) {
+                return tl.getCurrentState();
+            }
+        }
+        return State.RED;
+    }
+
+    public State getPedestrianSignal(Region region) {
+        for (TrafficLight tl : trafficLights) {
+            if (tl.getType() == TrafficLightType.PEDESTRIAN && tl.getRegion() == region) {
                 return tl.getCurrentState();
             }
         }
