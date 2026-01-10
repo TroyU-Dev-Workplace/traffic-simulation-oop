@@ -2,6 +2,7 @@ package com.traffic.sim.controller;
 
 import com.traffic.sim.rendering.Renderer;
 import com.traffic.sim.simulation.SimulationManager;
+
 import javafx.animation.AnimationTimer;
 
 /**
@@ -64,5 +65,26 @@ public class MainController {
 
     public void spawnPedestrian() {
         simulationManager.spawnPedestrian();
+    }
+
+    public void togglePause() {
+        if (isRunning) {
+            stop();
+        } else {
+            start();
+        }
+    }
+
+    public void step() {
+        if (!isRunning) {
+            // Update simulation one frame
+            simulationManager.update();
+            // Update rendering
+            renderer.render(simulationManager);
+        }
+    }
+
+    public void updateTrafficLightSettings(int green, int yellow, int red) {
+        simulationManager.updateTrafficLightTimings(green, yellow, red);
     }
 }

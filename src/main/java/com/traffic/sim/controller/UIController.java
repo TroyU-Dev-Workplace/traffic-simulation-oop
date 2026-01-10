@@ -4,6 +4,8 @@ import com.traffic.sim.rendering.Renderer;
 import javafx.fxml.FXML;
 import javafx.scene.layout.Pane;
 
+import javafx.scene.control.TextField;
+
 public class UIController {
 
     @FXML
@@ -43,5 +45,34 @@ public class UIController {
     @FXML
     private void onSpawnPedestrianClicked() {
         mainController.spawnPedestrian();
+    }
+
+    @FXML
+    private void onTogglePauseClicked() {
+        mainController.togglePause();
+    }
+
+    @FXML
+    private void onStepClicked() {
+        mainController.step();
+    }
+
+    @FXML
+    private TextField greenInput;
+    @FXML
+    private TextField yellowInput;
+    @FXML
+    private TextField redInput;
+
+    @FXML
+    private void onApplySettingsClicked() {
+        try {
+            int g = Integer.parseInt(greenInput.getText());
+            int y = Integer.parseInt(yellowInput.getText());
+            int r = Integer.parseInt(redInput.getText());
+            mainController.updateTrafficLightSettings(g, y, r);
+        } catch (NumberFormatException e) {
+            System.err.println("Invalid traffic light timings input");
+        }
     }
 }

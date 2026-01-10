@@ -16,66 +16,62 @@ public class SpawnPedestrian extends SpawnBase {
 
     @Override
     public void spawn() {
-        // Spawn pedestrians on sidewalks in different regions
-        spawnInRegion("NORTH"); // Top sidewalks
-        spawnInRegion("SOUTH"); // Bottom sidewalks  
-        spawnInRegion("WEST");  // Left sidewalks
-        spawnInRegion("EAST");  // Right sidewalks
-    }
-    
-    private void spawnInRegion(String regionName) {
-        int[] spawnBounds = getSidewalkBoundsForRegion(regionName);
-        if (spawnBounds == null) return;
-        
-        // Try to find a valid sidewalk position in the region
-        for (int attempt = 0; attempt < 20; attempt++) {
-            int x = spawnBounds[0] + (int)(Math.random() * (spawnBounds[2] - spawnBounds[0] + 1));
-            int y = spawnBounds[1] + (int)(Math.random() * (spawnBounds[3] - spawnBounds[1] + 1));
-            
-            if (mapSystem.getMap().isSidewalk(x, y)) {
-                String id = UUID.randomUUID().toString();
-                // Set direction towards nearest crosswalk
-                Direction direction = getDirectionTowardsCrosswalk(x, y, regionName);
-                
-                Pedestrian pedestrian = new Pedestrian(id, x + 0.5, y + 0.5, 0.02, direction);
-                pedestrianManager.addPedestrian(pedestrian);
-                break; // Only spawn one pedestrian per region per call
-            }
+        // Spawn randomly picked strict location
+        int choice = (int) (Math.random() * 4);
+
+        // Data derived from DescriptionPedestrian.md
+        // NW: y=8-9, x=14-15 -> Dir DOWN -> Region WEST
+        // NE: y=8-9, x=35-36 -> Dir LEFT -> Region NORTH
+        // SE: y=26-27, x=35-36 -> Dir UP -> Region EAST
+        // SW: y=26-27, x=14-15 -> Dir RIGHT -> Region SOUTH
+
+        int x = 0;
+        int y = 0;
+        Direction dir = Direction.DOWN;
+        com.traffic.sim.simulation.entities.Region regionStr = null;
+
+        switch (choice) {
+            case 0: // NW
+                x = 14;
+                y = 8;
+                dir = Direction.DOWN;
+                regionStr = com.traffic.sim.simulation.entities.Region.WEST;
+                break;
+            case 1: // NE
+                x = 35;
+                y = 7;
+                dir = Direction.LEFT;
+                regionStr = com.traffic.sim.simulation.entities.Region.NORTH;
+                break;
+            case 2: // SE
+                x = 34;
+                y = 26;
+                dir = Direction.UP;
+                regionStr = com.traffic.sim.simulation.entities.Region.EAST;
+                break;
+            case 3: // SW
+                x = 14;
+                y = 27;
+                dir = Direction.RIGHT;
+                regionStr = com.traffic.sim.simulation.entities.Region.SOUTH;
+                break;
+        }
+
+        // Create Pedestrian
+        // Check strict grid validity just in case
+        if (mapSystem.getMap().isSidewalk(x, y) || mapSystem.getMap().isCrosswalk(x, y)) {
+            String id = UUID.randomUUID().toString();
+            // Center in tile
+            double spawnX = x + 0.5;
+            double spawnY = y + 0.5;
+            double speed = 0.03; // Adjusted speed
+
+            Pedestrian p = new Pedestrian(id, spawnX, spawnY, speed, dir, regionStr);
+            pedestrianManager.addPedestrian(p);
         }
     }
-    
-    private int[] getSidewalkBoundsForRegion(String regionName) {
-        switch (regionName) {
-            case "NORTH":
-                // Top sidewalks: around buildings in upper area
-                return new int[]{0, 8, 49, 9}; // x1, y1, x2, y2
-            case "SOUTH": 
-                // Bottom sidewalks: around buildings in lower area
-                return new int[]{0, 26, 49, 27};
-            case "WEST":
-                // Left sidewalks: around buildings on left side
-                return new int[]{15, 0, 16, 35};
-            case "EAST":
-                // Right sidewalks: around buildings on right side  
-                return new int[]{33, 0, 34, 35};
-            default:
-                return null;
-        }
-    }
-    
-    private Direction getDirectionTowardsCrosswalk(int x, int y, String regionName) {
-        // Move pedestrians towards crosswalk areas based on their region
-        switch (regionName) {
-            case "NORTH":
-                return Direction.DOWN; // Move towards crosswalk
-            case "SOUTH":
-                return Direction.UP;   // Move towards crosswalk
-            case "WEST":
-                return Direction.RIGHT; // Move towards crosswalk
-            case "EAST":
-                return Direction.LEFT;  // Move towards crosswalk
-            default:
-                return Direction.DOWN; // Default direction
-        }
-    }
+
+    // Removed helpers as we hardcoded strict rules
+    // getSidewalkBoundsForRegion
+    // getDirectionTowardsCrosswalk
 }
