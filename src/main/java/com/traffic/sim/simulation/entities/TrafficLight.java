@@ -27,9 +27,8 @@ public class TrafficLight {
     private State currentState;
     private TrafficLightType type;
     private Direction direction;
-    private Region region; // Nam add: Region assigned to this traffic light
+    private Region region;
 
-    // Nam add: Include region for per-spawn traffic light matching
     public TrafficLight(String id, int x, int y, TrafficLightType type, Direction direction, Region region) {
         this.id = id;
         this.x = x;

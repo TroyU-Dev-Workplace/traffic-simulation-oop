@@ -26,7 +26,6 @@ public class SimulationManager {
 
     public SimulationManager() {
         this.trafficLightSystem = new TrafficLightSystem();
-        // Nam adding: Initialize VehicleManager with traffic light system reference
         this.vehicleManager = new VehicleManager(trafficLightSystem);
         this.pedestrianManager = new PedestrianManager();
         // Initialize map 50x36 (1000px / 20px)
@@ -36,7 +35,6 @@ public class SimulationManager {
     }
 
     public void update() {
-        // Nam adding: Use enhanced update method with map integration
         vehicleManager.updateWithMap(mapSystem.getMap());
         pedestrianManager.updateWithMap(mapSystem.getMap(), trafficLightSystem); // Use map-aware pedestrian update with
                                                                                  // strict TLS check

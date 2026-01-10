@@ -2,29 +2,29 @@ package com.traffic.sim.simulation.entities;
 
 public enum VehicleType {
 
-    CAR(80, 40, 0.12, 0.03),
-    TRUCK(150, 60, 0.35, 0.10),
-    MOTORCYCLE(54, 24, 0.05, 0.01);
+    CAR(4, 2, 0.12, 0.03),
+    TRUCK(7, 3, 0.35, 0.10),
+    MOTORCYCLE(3, 1, 0.05, 0.01);
 
-    private final double width;
-    private final double height;
+    private final int widthCells;
+    private final int heightCells;
     private final double emissionMoving;
     private final double emissionIdling;
 
-    VehicleType(double width, double height,
-                double emissionMoving, double emissionIdling) {
-        this.width = width;
-        this.height = height;
+    VehicleType(int widthCells, int heightCells,
+            double emissionMoving, double emissionIdling) {
+        this.widthCells = widthCells;
+        this.heightCells = heightCells;
         this.emissionMoving = emissionMoving;
         this.emissionIdling = emissionIdling;
     }
 
-    public double getWidth() {
-        return width;
+    public int getWidthCells() {
+        return widthCells;
     }
 
-    public double getHeight() {
-        return height;
+    public int getHeightCells() {
+        return heightCells;
     }
 
     public double getEmissionMoving() {

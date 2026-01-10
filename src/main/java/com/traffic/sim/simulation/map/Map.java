@@ -25,10 +25,10 @@ public class Map {
     private int height;
     private Double intersectionCenterX;
     private Double intersectionCenterY;
-    private Integer intersectionMinX; // Nam add: Intersection bounds cache
-    private Integer intersectionMinY; // Nam add: Intersection bounds cache
-    private Integer intersectionMaxX; // Nam add: Intersection bounds cache
-    private Integer intersectionMaxY; // Nam add: Intersection bounds cache
+    private Integer intersectionMinX;
+    private Integer intersectionMinY;
+    private Integer intersectionMaxX;
+    private Integer intersectionMaxY;
 
     public Map(int width, int height) {
         this.width = width;
@@ -105,7 +105,6 @@ public class Map {
         return BLOCKED;
     }
 
-    // Nam add: Allow updating grid for dynamic obstacles
     public void setTileType(int x, int y, int type) {
         if (isValidCoordinate(x, y)) {
             grid[y][x] = type;
@@ -169,13 +168,10 @@ public class Map {
         return intersectionCenterY;
     }
 
-    // Nam add: Get intersection bounds for spawn regions
     public int[] getIntersectionBounds() {
         ensureIntersectionCenter();
         return new int[] { intersectionMinX, intersectionMinY, intersectionMaxX, intersectionMaxY };
     }
-
-    // Nam adding: Helper methods for lane system
 
     /**
      * Check if tile is driveable (any type of road/lane)
@@ -198,7 +194,6 @@ public class Map {
      * Check if tile is intersection
      */
     public boolean isIntersection(int x, int y) {
-        // Nam adding: Intersection detected when road connects in both axes
         if (!isDriveable(x, y)) {
             return false;
         }
@@ -211,11 +206,11 @@ public class Map {
         if (intersectionCenterX != null && intersectionCenterY != null) {
             return;
         }
-        int minX = width - 1; // Nam add: Default scan bounds
-        int minY = height - 1; // Nam add: Default scan bounds
-        int maxX = 0; // Nam add: Default scan bounds
-        int maxY = 0; // Nam add: Default scan bounds
-        boolean found = false; // Nam add: Scan flag
+        int minX = width - 1;
+        int minY = height - 1;
+        int maxX = 0;
+        int maxY = 0;
+        boolean found = false;
 
         for (int y = 1; y < height - 1; y++) {
             for (int x = 1; x < width - 1; x++) {
@@ -236,23 +231,22 @@ public class Map {
         boolean boundsTooWide = !found || (maxX - minX + 1) > width * 0.8
                 || (maxY - minY + 1) > height * 0.8; // Nam add: Fallback if scan is too wide
         if (boundsTooWide) {
-            int[] refBounds = getReferenceIntersectionBounds(); // Nam add: Use reference layout bounds
+            int[] refBounds = getReferenceIntersectionBounds();
             minX = refBounds[0];
             minY = refBounds[1];
             maxX = refBounds[2];
             maxY = refBounds[3];
         }
 
-        intersectionMinX = minX; // Nam add: Cache bounds
-        intersectionMinY = minY; // Nam add: Cache bounds
-        intersectionMaxX = maxX; // Nam add: Cache bounds
-        intersectionMaxY = maxY; // Nam add: Cache bounds
+        intersectionMinX = minX;
+        intersectionMinY = minY;
+        intersectionMaxX = maxX;
+        intersectionMaxY = maxY;
 
         intersectionCenterX = (minX + maxX + 1) / 2.0;
         intersectionCenterY = (minY + maxY + 1) / 2.0;
     }
 
-    // Nam add: Reference intersection bounds from Map.java layout data
     private int[] getReferenceIntersectionBounds() {
         int minX = 17;
         int maxX = 32;
@@ -268,7 +262,7 @@ public class Map {
         int tileType = getTileType(x, y);
         switch (tileType) {
             case 2:
-                return "ALL"; // Nam adding: road allows all directions
+                return "ALL";
             case 3:
                 return "SOUTH"; // South-bound ↓
             case 4:
@@ -292,24 +286,23 @@ public class Map {
     public boolean isValidLaneDirection(int x, int y, double dirX, double dirY) {
         String laneDir = getLaneDirection(x, y);
 
-        // Nam adding: Determine vehicle's primary movement direction
         if (Math.abs(dirY) > Math.abs(dirX)) {
             // Primarily vertical movement
             if (dirY > 0) { // Moving down
                 return laneDir.equals("SOUTH") || laneDir.equals("ALL")
-                        || laneDir.equals("LEFT_TURN") || laneDir.equals("RIGHT_TURN"); // Nam adding: allow turn lanes
+                        || laneDir.equals("LEFT_TURN") || laneDir.equals("RIGHT_TURN");
             } else { // Moving up
                 return laneDir.equals("NORTH") || laneDir.equals("ALL")
-                        || laneDir.equals("LEFT_TURN") || laneDir.equals("RIGHT_TURN"); // Nam adding: allow turn lanes
+                        || laneDir.equals("LEFT_TURN") || laneDir.equals("RIGHT_TURN");
             }
         } else {
             // Primarily horizontal movement
             if (dirX > 0) { // Moving right
                 return laneDir.equals("EAST") || laneDir.equals("ALL")
-                        || laneDir.equals("LEFT_TURN") || laneDir.equals("RIGHT_TURN"); // Nam adding: allow turn lanes
+                        || laneDir.equals("LEFT_TURN") || laneDir.equals("RIGHT_TURN");
             } else { // Moving left
                 return laneDir.equals("WEST") || laneDir.equals("ALL")
-                        || laneDir.equals("LEFT_TURN") || laneDir.equals("RIGHT_TURN"); // Nam adding: allow turn lanes
+                        || laneDir.equals("LEFT_TURN") || laneDir.equals("RIGHT_TURN");
             }
         }
     }
