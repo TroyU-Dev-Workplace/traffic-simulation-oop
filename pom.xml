@@ -37,6 +37,13 @@
                 <version>0.0.8</version>
                 <configuration>
                     <mainClass>com.traffic.sim.app.App</mainClass>
+                    <compress>2</compress>
+                    <noHeaderFiles>true</noHeaderFiles>
+                    <stripDebug>true</stripDebug>
+                    <noManPages>true</noManPages>
+                    <launcher>traffic-sim</launcher>
+                    <jlinkImageName>traffic-sim-image</jlinkImageName>
+                    <jlinkZipName>traffic-sim-zip</jlinkZipName>
                 </configuration>
             </plugin>
         </plugins>

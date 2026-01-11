@@ -97,11 +97,11 @@ public class Vehicle {
         switch (type) {
             case CAR:
                 int index = (int) (Math.random() * 18) + 1;
-                this.spritePath = "/assets/vehicles/car" + index + ".png";
+                this.spritePath = "/assets/vehicles/Car" + index + ".png";
                 break;
             case TRUCK:
                 int index2 = (int) (Math.random() * 2) + 19;
-                this.spritePath = "/assets/vehicles/car" + index2 + ".png";
+                this.spritePath = "/assets/vehicles/Car" + index2 + ".png";
                 break;
             case MOTORCYCLE:
                 int index3 = (int) (Math.random() * 4) + 1;
