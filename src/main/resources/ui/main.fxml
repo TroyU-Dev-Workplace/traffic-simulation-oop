@@ -28,8 +28,11 @@
                 <Button text="Stop" onAction="#onStopClicked" />
                 <Button text="Reset" onAction="#onResetClicked" />
                 <Separator />
-                <Button text="Toggle Pause" onAction="#onTogglePauseClicked" />
-                <Button text="Step 1 Frame" onAction="#onStepClicked" />
+                <!-- Auto Simulation Controls -->
+                <Button fx:id="autoSimButton" text="Auto Simulation" onAction="#onAutoSimClicked" />
+                <Label fx:id="timerLabel" text="02:00" textFill="cyan" style="-fx-font-size: 14px; -fx-padding: 5;" />
+                <Separator />
+                <Button fx:id="toggleGridButton" text="Toggle Grid" onAction="#onToggleGridClicked" />
                 <Separator />
                 <Button text="Spawn Vehicle" onAction="#onSpawnVehicleClicked" />
                 <Button text="Spawn Pedestrian" onAction="#onSpawnPedestrianClicked" />
@@ -44,6 +47,41 @@
                      <TextField fx:id="redInput" promptText="2" prefWidth="40" text="2"/>
                 </HBox>
                 <Button text="Apply Settings" onAction="#onApplySettingsClicked" />
+                <Separator />
+                
+                <!-- METRICS DASHBOARD -->
+                <Label text="TRAFFIC ANALYTICS" textFill="white" style="-fx-font-weight: bold; -fx-font-size: 16px;"/>
+                <Separator />
+                
+                <VBox spacing="5" alignment="CENTER_LEFT" style="-fx-padding: 8; -fx-background-color: #111; -fx-border-color: #444; -fx-border-width: 1;">
+                    <!-- EFFICIENCY -->
+                    <Label text="Efficiency" textFill="#888" style="-fx-font-size: 10px; -fx-font-weight: bold;"/>
+                    <Label fx:id="lblThroughput" text="Throughput: 0 v/m" textFill="lightgreen"/>
+                    <Label fx:id="lblOccupancy" text="Occupancy: 0%" textFill="white"/>
+                    <Separator/>
+
+                    <!-- SAFETY & CONGESTION -->
+                    <Label text="Safety &amp; Congestion" textFill="#888" style="-fx-font-size: 10px; -fx-font-weight: bold;"/>
+                    <Label fx:id="lblCongestion" text="Congestion: Normal" textFill="white"/>
+                    <Separator/>
+
+                     <!-- DEADLOCK & LOGIC -->
+                    <Label text="Deadlock &amp; Logic" textFill="#888" style="-fx-font-size: 10px; -fx-font-weight: bold;"/>
+                    <Label fx:id="lblDeadlockRate" text="Deadlock Rate: 0%" textFill="red"/>
+                    <Label fx:id="lblBlockageCount" text="Blockage Count: 0" textFill="red"/>
+                    <Separator/>
+
+                    <!-- EXPERIENCE (Summary) -->
+                    <Label text="Experience (Summary)" textFill="#888" style="-fx-font-size: 10px; -fx-font-weight: bold;"/>
+                    <Label fx:id="lblAvgWait" text="Avg Wait: --" textFill="white"/>
+                    <Label fx:id="lblAvgTravel" text="Avg Travel: --" textFill="white"/>
+                    <Separator/>
+
+                    <!-- IMPACT (Summary) -->
+                    <Label text="Impact (Summary)" textFill="#888" style="-fx-font-size: 10px; -fx-font-weight: bold;"/>
+                    <Label fx:id="lblCO2" text="CO2: --" textFill="lightblue"/>
+                    <Label fx:id="lblFrustration" text="Frustration: --" textFill="orange"/>
+                </VBox>
             </VBox>
         </HBox>
     </center>

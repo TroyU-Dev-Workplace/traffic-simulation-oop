@@ -41,6 +41,13 @@ public class Vehicle {
     private int waitingFrames;
     private final long entryTime;
 
+    // Metrics Data
+    private long spawnTime; // Time in ms
+    private double accumulatedWaitingTime; // Seconds
+    private int stopCount;
+    private boolean isMoving;
+    private boolean wasStopped; // Helper to detect stop transitions
+
     private List<GridPoint> occupiedCells = new ArrayList<>();
 
     private static class GridPoint {
@@ -68,9 +75,14 @@ public class Vehicle {
         this.type = type;
         this.direction = direction;
 
-        this.totalCO2 = 0.0;
-        this.waitingFrames = 0;
         this.entryTime = System.currentTimeMillis();
+
+        // Init metrics
+        this.spawnTime = System.currentTimeMillis();
+        this.accumulatedWaitingTime = 0.0;
+        this.stopCount = 0;
+        this.isMoving = true;
+        this.wasStopped = false;
 
         this.originalSpeed = speed;
         this.isStoppedAtLight = false;
@@ -120,9 +132,21 @@ public class Vehicle {
             x += direction.dx() * speed;
             y += direction.dy() * speed;
             totalCO2 += type.getEmissionMoving();
+            isMoving = true;
+            if (wasStopped) {
+                wasStopped = false;
+            }
         } else {
             waitingFrames++;
             totalCO2 += type.getEmissionIdling();
+            isMoving = false;
+            // Add frame time (assuming ~60fps, 1/60 sec)
+            accumulatedWaitingTime += (1.0 / 60.0);
+
+            if (!wasStopped) {
+                stopCount++;
+                wasStopped = true;
+            }
         }
     }
 
@@ -200,6 +224,22 @@ public class Vehicle {
 
     public int getLengthInCells() {
         return type.getHeightCells();
+    }
+
+    public long getSpawnTime() {
+        return spawnTime;
+    }
+
+    public double getAccumulatedWaitingTime() {
+        return accumulatedWaitingTime;
+    }
+
+    public int getStopCount() {
+        return stopCount;
+    }
+
+    public boolean isMoving() {
+        return isMoving;
     }
 
     /**
@@ -297,12 +337,16 @@ public class Vehicle {
                 int currentGridY = (int) Math.floor(y);
 
                 if (map.getTileType(currentGridX, currentGridY) != Map.STOP_LINE) {
-                    TrafficLight.State lightState = getTrafficLightState(tls);
+                    // Fix: Stop bug where vehicles catch red light again while clearing
+                    // Only stop if we are not already inside the intersection
+                    if (!isInsideIntersection(x, y, map)) {
+                        TrafficLight.State lightState = getTrafficLightState(tls);
 
-                    if (lightState != TrafficLight.State.GREEN) {
-                        this.speed = 0;
-                        this.isStoppedAtLight = true;
-                        return;
+                        if (lightState != TrafficLight.State.GREEN) {
+                            this.speed = 0;
+                            this.isStoppedAtLight = true;
+                            return;
+                        }
                     }
                 }
             }
@@ -555,6 +599,40 @@ public class Vehicle {
                 cells.add(new GridPoint(ix, iy, 0));
             }
         }
+
+        // Add 1-cell buffer in front of the vehicle
+        // This ensures a 1-cell gap between vehicles
+        if (direction != null) {
+            // Determine the "front" range based on direction
+            int dirX = (int) Math.signum(direction.dx());
+            int dirY = (int) Math.signum(direction.dy());
+
+            if (dirX != 0) { // Moving horizontally
+                // If moving RIGHT (1), add to Max X. If LEFT (-1), add to Min X.
+                // The current cells range from startX to startX + w
+                // Front X depends on direction
+                int frontX = (dirX > 0) ? (int) Math.floor(startX + w - 1 + 0.01) + 1
+                        : (int) Math.floor(startX + 0.01) - 1;
+
+                // Add the whole height column at this frontX
+                for (int j = 0; j < h; j++) {
+                    int iy = (int) Math.floor(startY + j + 0.01);
+                    cells.add(new GridPoint(frontX, iy, 0));
+                }
+            } else if (dirY != 0) { // Moving vertically
+                // If moving DOWN (1), add to Max Y. If UP (-1), add to Min Y.
+                // Front Y depends on direction
+                int frontY = (dirY > 0) ? (int) Math.floor(startY + h - 1 + 0.01) + 1
+                        : (int) Math.floor(startY + 0.01) - 1;
+
+                // Add the whole width row at this frontY
+                for (int i = 0; i < w; i++) {
+                    int ix = (int) Math.floor(startX + i + 0.01);
+                    cells.add(new GridPoint(ix, frontY, 0));
+                }
+            }
+        }
+
         return cells;
     }
 
@@ -708,7 +786,6 @@ public class Vehicle {
 
     public void setRotation(double rotation) {
         this.rotation = rotation;
-
     }
 
     // Helper methods for Anti-Deadlock

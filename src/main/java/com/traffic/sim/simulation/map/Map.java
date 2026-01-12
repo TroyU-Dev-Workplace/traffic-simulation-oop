@@ -350,6 +350,10 @@ public class Map {
         return getTileType(x, y) == STOP_LINE;
     }
 
+    public void reset() {
+        initializeDefaultMap();
+    }
+
     /**
      * Debug method to print the grid to console.
      * 0: ROAD, 1: BLOCKED, 2: SIDEWALK, 3: CROSSWALK, 4: STOP_LINE, 5: LANE_DIVIDER

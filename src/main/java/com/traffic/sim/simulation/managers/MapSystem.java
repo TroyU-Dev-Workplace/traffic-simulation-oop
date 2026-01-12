@@ -24,6 +24,10 @@ public class MapSystem {
         cacheWalkableTiles();
     }
 
+    public void reset() {
+        map.reset();
+    }
+
     private void cacheWalkableTiles() {
         roadTiles = new ArrayList<>();
         sidewalkTiles = new ArrayList<>();
