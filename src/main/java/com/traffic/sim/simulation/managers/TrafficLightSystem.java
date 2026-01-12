@@ -116,12 +116,6 @@ public class TrafficLightSystem {
         // NS Starts GREEN
         // EW Starts RED
         // Note: For EW to start in Red, we calculate its RED duration.
-        // In this strict model, Red duration = Green + Yellow + Buffer (of the OTHER
-        // direction usually)
-        // OR simply the UI config for "Red".
-        // User Requirement: "Every light phase must run for exactly the number of
-        // seconds provided by the UI input."
-        // So we use the Configured Red Duration.
 
         this.nsController = new DirectionController(Phase.GREEN, DEFAULT_GREEN, DEFAULT_YELLOW,
                 DEFAULT_BUFFER + DEFAULT_GREEN + DEFAULT_YELLOW);

@@ -70,8 +70,4 @@ public class SpawnPedestrian extends SpawnBase {
             pedestrianManager.addPedestrian(p);
         }
     }
-
-    // Removed helpers as we hardcoded strict rules
-    // getSidewalkBoundsForRegion
-    // getDirectionTowardsCrosswalk
 }
