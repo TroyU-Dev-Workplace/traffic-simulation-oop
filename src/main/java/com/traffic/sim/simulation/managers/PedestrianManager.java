@@ -17,9 +17,19 @@ public class PedestrianManager {
         pedestrians.put(pedestrian.getId(), pedestrian);
     }
 
-    public void update() {
+    public void updateWithMap(com.traffic.sim.simulation.map.Map map, Object tls) {
+        com.traffic.sim.simulation.managers.TrafficLightSystem system = (com.traffic.sim.simulation.managers.TrafficLightSystem) tls;
+
+        List<String> toRemove = new ArrayList<>();
         for (Pedestrian p : pedestrians.values()) {
-            p.update();
+            p.update(map, system);
+            if (p.isRemoved()) {
+                toRemove.add(p.getId());
+            }
+        }
+
+        for (String id : toRemove) {
+            pedestrians.remove(id);
         }
     }
 

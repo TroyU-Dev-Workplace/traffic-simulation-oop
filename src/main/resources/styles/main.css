@@ -1,27 +1,185 @@
+/* --- PREMIUM DARK THEME --- */
+
 .root {
-  -fx-font-family: "Segoe UI", sans-serif;
-  -fx-base: #222;
-  -fx-control-inner-background: #444;
+    -fx-font-family: "Segoe UI", "SF Pro Display", "Roboto", sans-serif;
+    -fx-base: #1e1e2e;
+    -fx-control-inner-background: #181825;
+    -fx-background-color: #1e1e2e;
 }
 
+/* Sidebar Panel */
+.sidebar-panel {
+    -fx-background-color: #1e1e2e; /* Deep Navy/Black */
+    -fx-padding: 15;
+    -fx-alignment: top-center;
+    -fx-spacing: 12; /* Space between sections */
+    -fx-border-color: #313244;
+    -fx-border-width: 0 0 0 1;
+}
+
+/* Section Header */
+.section-header {
+    -fx-text-fill: #a6adc8; /* Subtext */
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 5 0 2 0;
+    -fx-opacity: 0.8;
+}
+
+/* Buttons */
 .button {
-  -fx-background-color: #555;
-  -fx-text-fill: white;
-  -fx-border-color: #666;
-  -fx-border-radius: 3;
-  -fx-background-radius: 3;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-cursor: hand;
+    -fx-transition-duration: 0.2s;
+    -fx-font-weight: bold;
 }
 
-.button:hover {
-  -fx-background-color: #666;
+.primary-button {
+    -fx-pref-width: 70;
+    -fx-padding: 8 12;
+    -fx-text-fill: #11111b; /* Dark text for contrast */
 }
 
-.button:pressed {
-  -fx-background-color: #444;
+.success {
+    -fx-background-color: #a6e3a1; /* Green */
+}
+.success:hover {
+    -fx-background-color: #94e2d5;
 }
 
-.tool-bar {
-  -fx-background-color: #222;
-  -fx-border-color: #444;
-  -fx-border-width: 0 0 1 0;
+.danger {
+    -fx-background-color: #f38ba8; /* Red */
+}
+.danger:hover {
+    -fx-background-color: #eba0ac;
+}
+
+.warning {
+    -fx-background-color: #f9e2af; /* Yellow */
+}
+.warning:hover {
+    -fx-background-color: #f2cdcd;
+}
+
+.secondary-button {
+    -fx-background-color: #313244; /* Surface 0 */
+    -fx-text-fill: #cdd6f4; /* Text */
+    -fx-border-color: #45475a;
+    -fx-border-radius: 6;
+    -fx-pref-width: 200;
+}
+.secondary-button:hover {
+    -fx-background-color: #45475a;
+}
+
+.action-button {
+    -fx-background-color: #89b4fa; /* Blue */
+    -fx-text-fill: #1e1e2e;
+    -fx-pref-width: 100;
+}
+.action-button:hover {
+    -fx-background-color: #b4befe;
+}
+
+/* Timer Label */
+.timer-label {
+    -fx-font-size: 18px;
+    -fx-text-fill: #89b4fa; /* Neon Blue */
+    -fx-font-family: "Consolas", "Monaco", monospace;
+    -fx-font-weight: bold;
+}
+
+/* Inputs */
+.input-group {
+    -fx-alignment: center-left;
+    -fx-spacing: 2;
+}
+
+.input-label {
+    -fx-font-weight: bold;
+    -fx-padding: 0 4 0 4;
+}
+.green { -fx-text-fill: #a6e3a1; }
+.yellow { -fx-text-fill: #f9e2af; }
+.red { -fx-text-fill: #f38ba8; }
+
+.number-input {
+    -fx-background-color: #181825;
+    -fx-text-fill: #cdd6f4;
+    -fx-max-width: 40;
+    -fx-border-color: #45475a;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-alignment: center;
+}
+.number-input:focused {
+    -fx-border-color: #89b4fa;
+}
+
+/* --- DASHBOARD --- */
+.dashboard-title {
+    -fx-text-fill: #cdd6f4;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 2);
+    -fx-padding: 10 0 5 0;
+}
+
+.metrics-card {
+    -fx-background-color: rgba(24, 24, 37, 0.6); /* Glassy dark */
+    -fx-background-radius: 10;
+    -fx-border-color: #45475a;
+    -fx-border-radius: 10;
+    -fx-padding: 12;
+    -fx-pref-width: 250;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 4);
+}
+
+/* ScrollPane */
+.sidebar-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+.sidebar-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.metric-category {
+    -fx-text-fill: #6c7086;
+    -fx-font-size: 9px;
+    -fx-font-weight: bold;
+    -fx-padding: 0 0 4 0;
+}
+
+.metric-row {
+    -fx-alignment: center-left;
+    -fx-spacing: 5;
+    -fx-padding: 2 0;
+}
+
+.metric-name {
+    -fx-text-fill: #bac2de;
+    -fx-pref-width: 90;
+}
+
+.metric-value {
+    -fx-text-fill: #fff;
+    -fx-font-weight: bold;
+}
+
+.accent { -fx-text-fill: #89b4fa; }
+.danger-text { -fx-text-fill: #f38ba8; }
+.warning-text { -fx-text-fill: #f9e2af; }
+
+.light-separator .line {
+    -fx-border-color: #313244;
+    -fx-border-width: 1 0 0 0;
+}
+
+.separator .line {
+    -fx-border-color: #313244;
+    -fx-border-width: 1 0 0 0;
 }

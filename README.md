@@ -75,17 +75,8 @@ src/
 
 The main branches are: `main` (release) and `develop` (active development).
 
-New work **MUST** be created from `develop` using the naming rules:
+New work **MUST** be createdzxcvc- `fix/fix-traffic-light`
 
-- `feature/<short-name>` //new feature
-- `fix/<short-name>` //fix bug
-- `hotfix/<short-name>` //fix critical bug
-- `refactor/<short-name>` //refactor code
-
-Example:
-
-- `feature/add-traffic-light`
-- `fix/fix-traffic-light`
 - `hotfix/fix-traffic-light`
 - `refactor/refactor-traffic-light`
 
