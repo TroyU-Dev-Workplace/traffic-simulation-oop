@@ -40,12 +40,15 @@ public class TrafficLightSystem {
         private int yellowDuration;
         private int redDuration; // Current Red duration (may vary if we want asymmetry, but standardized here)
 
+        private int cycleCount = 0;
+
         public DirectionController(Phase startPhase, int g, int y, int r) {
             this.phase = startPhase;
             this.greenDuration = g;
             this.yellowDuration = y;
             this.redDuration = r;
             this.timer = 0;
+            this.cycleCount = 0;
         }
 
         public void update() {
@@ -60,10 +63,16 @@ public class TrafficLightSystem {
                         switchPhase(Phase.RED);
                     break;
                 case RED:
-                    if (timer > redDuration)
+                    if (timer > redDuration) {
                         switchPhase(Phase.GREEN);
+                        cycleCount++; // Completed a full Red cycle
+                    }
                     break;
             }
+        }
+
+        public int getCycleCount() {
+            return cycleCount;
         }
 
         private void switchPhase(Phase next) {
@@ -167,6 +176,13 @@ public class TrafficLightSystem {
         updateLights();
     }
 
+    public void reset() {
+        // Reset Independent Controllers to initial state
+        nsController.reset(Phase.GREEN);
+        ewController.reset(Phase.RED);
+        updateLights();
+    }
+
     // --- LIGHT SYNCHRONIZATION LOGIC ---
 
     private void updateLights() {
@@ -239,6 +255,12 @@ public class TrafficLightSystem {
             }
         }
         return State.RED;
+    }
+
+    public int getCycleCount() {
+        // Return the max cycle count (e.g., from NS which is main controller or max of
+        // both)
+        return Math.max(nsController.getCycleCount(), ewController.getCycleCount());
     }
 
     // Exposed for the Renderer to draw the entities

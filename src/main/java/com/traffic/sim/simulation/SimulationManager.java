@@ -23,6 +23,7 @@ public class SimulationManager {
     private MapSystem mapSystem;
     private SpawnVehicle spawnVehicleLogic;
     private SpawnPedestrian spawnPedestrianLogic;
+    private com.traffic.sim.simulation.managers.MetricsManager metricsManager;
 
     public SimulationManager() {
         this.trafficLightSystem = new TrafficLightSystem();
@@ -30,16 +31,25 @@ public class SimulationManager {
         this.pedestrianManager = new PedestrianManager();
         // Initialize map 50x36 (1000px / 20px)
         this.mapSystem = new MapSystem(50, 36);
+        this.metricsManager = new com.traffic.sim.simulation.managers.MetricsManager(mapSystem.getMap());
+
         this.spawnVehicleLogic = new SpawnVehicle(mapSystem, vehicleManager);
         this.spawnPedestrianLogic = new SpawnPedestrian(mapSystem, pedestrianManager);
     }
 
     public void update() {
-        vehicleManager.updateWithMap(mapSystem.getMap());
-        pedestrianManager.updateWithMap(mapSystem.getMap(), trafficLightSystem); // Use map-aware pedestrian update with
-                                                                                 // strict TLS check
+        List<Vehicle> removedVehicles = vehicleManager.updateWithMap(mapSystem.getMap());
+        // Register exited vehicles for metrics
+        for (Vehicle v : removedVehicles) {
+            metricsManager.registerVehicleExit(v);
+        }
+
+        pedestrianManager.updateWithMap(mapSystem.getMap(), trafficLightSystem);
 
         trafficLightSystem.update();
+
+        // Update real-time metrics
+        metricsManager.update(vehicleManager.getVehicles());
     }
 
     public void updateTrafficLightTimings(int green, int yellow, int red) {
@@ -50,13 +60,26 @@ public class SimulationManager {
         spawnVehicleLogic.spawn();
     }
 
+    public void autoSpawnVehicle() {
+        // Just call standard logic which now includes safe retry
+        spawnVehicleLogic.spawn();
+    }
+
     public void spawnPedestrian() {
+        spawnPedestrianLogic.spawn();
+    }
+
+    public void autoSpawnPedestrian() {
         spawnPedestrianLogic.spawn();
     }
 
     public void reset() {
         vehicleManager.clear();
         pedestrianManager.clear();
+        // Reset traffic lights if possible
+        trafficLightSystem.reset();
+        mapSystem.reset();
+        metricsManager.reset();
     }
 
     // Getters for Renderer to read state (ReadOnly ideally, but for simplicity
@@ -87,5 +110,9 @@ public class SimulationManager {
 
     public MapSystem getMapSystem() {
         return mapSystem;
+    }
+
+    public com.traffic.sim.simulation.managers.MetricsManager getMetricsManager() {
+        return metricsManager;
     }
 }

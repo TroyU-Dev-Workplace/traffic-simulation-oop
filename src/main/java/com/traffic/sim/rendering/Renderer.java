@@ -27,7 +27,11 @@ public class Renderer {
 
     private SimulationManager currentSimulationManager;
 
-    public static boolean IS_DEBUG_MODE = true;
+    public static boolean IS_DEBUG_MODE = false;
+
+    public void toggleGrid() {
+        IS_DEBUG_MODE = !IS_DEBUG_MODE;
+    }
 
     public void render(SimulationManager simulationManager) {
         this.currentSimulationManager = simulationManager;
@@ -36,6 +40,11 @@ public class Renderer {
 
         // Draw Map
         drawMap(simulationManager.getMapSystem().getMap());
+
+        // Draw Grid if enabled (Debug Mode)
+        if (IS_DEBUG_MODE) {
+            drawDebugOverlay(simulationManager.getMapSystem().getMap());
+        }
 
         // Draw Vehicles
         for (Vehicle v : simulationManager.getVehicles()) {
@@ -68,10 +77,6 @@ public class Renderer {
             errorText.setLayoutY(360);
 
             canvas.getChildren().add(errorText);
-        }
-
-        if (IS_DEBUG_MODE) {
-            drawDebugOverlay(map);
         }
     }
 
