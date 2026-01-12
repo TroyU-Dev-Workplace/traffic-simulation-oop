@@ -18,14 +18,6 @@ public class PedestrianManager {
     }
 
     public void updateWithMap(com.traffic.sim.simulation.map.Map map, Object tls) {
-        // Using Object to avoid circular dependency in imports immediately if
-        // necessary,
-        // but ideally should be TrafficLightSystem.
-        // But since we are editing files one by one, let's use the explicit type if
-        // import exists.
-        // Checking imports... assuming TrafficLightSystem is needed.
-        // To be safe, fully qualified name or just cast.
-
         com.traffic.sim.simulation.managers.TrafficLightSystem system = (com.traffic.sim.simulation.managers.TrafficLightSystem) tls;
 
         List<String> toRemove = new ArrayList<>();

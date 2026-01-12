@@ -114,26 +114,27 @@ public class UIController {
 
         javafx.application.Platform.runLater(() -> {
             // Real-time Metrics
-            lblThroughput.setText(String.format("Throughput: %.1f v/m", throughput));
-            lblOccupancy.setText(String.format("Occupancy: %.1f%%", occupancy));
+            lblThroughput.setText(String.format("%.1f v/m", throughput));
+            lblOccupancy.setText(String.format("%.1f%%", occupancy));
 
-            lblCongestion.setText("Congestion: " + (congested ? "HIGH" : "Normal"));
-            lblCongestion.setTextFill(congested ? javafx.scene.paint.Color.RED : javafx.scene.paint.Color.WHITE);
+            lblCongestion.setText(congested ? "HIGH" : "Normal");
+            lblCongestion.setTextFill(
+                    congested ? javafx.scene.paint.Color.rgb(243, 139, 168) : javafx.scene.paint.Color.WHITE);
 
-            lblDeadlockRate.setText(String.format("Deadlock Rate: %.1f%%", deadlockRate));
-            lblBlockageCount.setText(String.format("Blockage Count: %d", blockageCount));
+            lblDeadlockRate.setText(String.format("%.1f%%", deadlockRate));
+            lblBlockageCount.setText(String.format("%d", blockageCount));
 
             // Summary Metrics (Only show values if simulation finished/summary available)
             if (isSummaryAvailable) {
-                lblAvgWait.setText(String.format("Avg Wait: %.1fs", avgWait));
-                lblAvgTravel.setText(String.format("Avg Travel: %.1fs", avgTravel));
-                lblCO2.setText(String.format("CO2: %.1f kg", co2));
-                lblFrustration.setText(String.format("Frustration: %.1f%%", frustration));
+                lblAvgWait.setText(String.format("%.1fs", avgWait));
+                lblAvgTravel.setText(String.format("%.1fs", avgTravel));
+                lblCO2.setText(String.format("%.1f CO2 units", co2));
+                lblFrustration.setText(String.format("%.1f%%", frustration));
             } else {
-                lblAvgWait.setText("Avg Wait: --");
-                lblAvgTravel.setText("Avg Travel: --");
-                lblCO2.setText("CO2: --");
-                lblFrustration.setText("Frustration: --");
+                lblAvgWait.setText("--");
+                lblAvgTravel.setText("--");
+                lblCO2.setText("--");
+                lblFrustration.setText("--");
             }
         });
     }

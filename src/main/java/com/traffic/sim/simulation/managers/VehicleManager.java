@@ -1,13 +1,15 @@
 package com.traffic.sim.simulation.managers;
 
 import com.traffic.sim.simulation.entities.Vehicle;
-import com.traffic.sim.simulation.entities.TrafficLight;
-import com.traffic.sim.simulation.entities.Region;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Manages the collection of vehicles in the simulation.
+ * Responsible for adding, removing, and iterating over vehicles.
+ */
 public class VehicleManager {
     private Map<String, Vehicle> vehicles;
     private TrafficLightSystem trafficLightSystem;
@@ -29,13 +31,10 @@ public class VehicleManager {
         vehicles.put(vehicle.getId(), vehicle);
     }
 
-    public void update() {
-        for (Vehicle v : vehicles.values()) {
-
-            v.update();
-        }
-    }
-
+    /**
+     * Updates all vehicles with map interactions.
+     * Removes vehicles that have exited the map.
+     */
     public List<Vehicle> updateWithMap(com.traffic.sim.simulation.map.Map map) {
         List<Vehicle> removedVehicles = new ArrayList<>();
         java.util.Iterator<Vehicle> iterator = vehicles.values().iterator();
@@ -68,5 +67,4 @@ public class VehicleManager {
     public void clear() {
         vehicles.clear();
     }
-
 }

@@ -7,7 +7,6 @@ import javafx.animation.AnimationTimer;
 
 /**
  * Coordinator between Backend (Simulation) and Frontend (Renderer).
- * Does not contain UI logic itself, but controls the flow.
  */
 public class MainController {
     private SimulationManager simulationManager;
@@ -133,14 +132,14 @@ public class MainController {
         // Vehicle spawn every ~90 frames (approx 1.5 seconds) - Slower to prevent
         // gridlock
         vehicleSpawnTimer++;
-        if (vehicleSpawnTimer >= 90) {
+        if (vehicleSpawnTimer >= 70) {
             simulationManager.autoSpawnVehicle();
             vehicleSpawnTimer = 0;
         }
 
         // Pedestrian spawn every ~180 frames (approx 3 seconds)
         pedestrianSpawnTimer++;
-        if (pedestrianSpawnTimer >= 180) {
+        if (pedestrianSpawnTimer >= 140) {
             simulationManager.autoSpawnPedestrian();
             pedestrianSpawnTimer = 0;
         }

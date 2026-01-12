@@ -32,15 +32,39 @@ public class MetricsManager {
     private int deadlockFrames = 0;
     private int blockageCount = 0;
     private int blockageTimer = 0;
+    private double currentDeadlockRate = 0; // % Instantaneous
     private static final int BLOCKAGE_TIME_THRESHOLD = 300; // 5 seconds of no movement with occupancy
 
     // --- THRESHOLDS ---
-    private static final double CONGESTION_THRESHOLD = 80.0; // %
-    private static final int CONGESTION_TIME_THRESHOLD = 180; // 3 seconds @ 60fps
+    private static final double CONGESTION_THRESHOLD = 40.0; // % (Scaled)
+    private static final int CONGESTION_TIME_THRESHOLD = 60; // 1 seconds @ 60fps
     private static final double FRUSTRATION_WAIT_THRESHOLD = 60.0; // seconds
+
+    // Driveable area count
+    private int totalDriveableTiles = 0;
+
+    // Storing current active sums for "Final" retrieval (Summary Metrics)
+    // These are reset and recalculated every frame in update() ->
+    // calculateOccupancyAndDeadlock()
+    private double currentActiveWaitSum = 0;
+    private double currentActiveCO2Sum = 0;
+    private int currentActiveFrustrated = 0;
+    private int currentActiveCount = 0;
 
     public MetricsManager(Map map) {
         this.map = map;
+        calculateDriveableArea();
+    }
+
+    private void calculateDriveableArea() {
+        totalDriveableTiles = 0;
+        for (int y = 0; y < map.getHeight(); y++) {
+            for (int x = 0; x < map.getWidth(); x++) {
+                if (map.isDriveable(x, y)) {
+                    totalDriveableTiles++;
+                }
+            }
+        }
     }
 
     public void update(List<Vehicle> activeVehicles) {
@@ -49,14 +73,11 @@ public class MetricsManager {
         // 1. Throughput Calculation (Sliding Window)
         updateThroughput();
 
-        // 2. Occupancy & Deadlock Calculation
+        // 2. Occupancy & Deadlock Calculation (and Active Stats Accumulation)
         calculateOccupancyAndDeadlock(activeVehicles);
 
         // 3. Congestion Check
         checkCongestion();
-
-        // 4. Update Real-time Average metrics (for display)
-        updateRealTimeMetrics(activeVehicles);
     }
 
     public void registerVehicleExit(Vehicle v) {
@@ -91,42 +112,21 @@ public class MetricsManager {
         totalFrames = 0;
         deadlockFrames = 0;
         blockageCount = 0;
+        currentDeadlockRate = 0;
         blockageTimer = 0;
 
-        currentActiveAvgWait = 0;
-        currentActiveFrustratedCount = 0;
+        // Reset active accumulators
+        currentActiveWaitSum = 0;
+        currentActiveCO2Sum = 0;
+        currentActiveFrustrated = 0;
         currentActiveCount = 0;
+
+        // Recalculate driveable area in case map reset (rare but safe)
+        if (map != null)
+            calculateDriveableArea();
     }
 
     // --- INTERNAL CALCULATIONS ---
-
-    private double currentActiveAvgWait = 0;
-    private int currentActiveFrustratedCount = 0;
-    private int currentActiveCount = 0;
-
-    private void updateRealTimeMetrics(List<Vehicle> activeVehicles) {
-        currentActiveCount = activeVehicles.size();
-        if (currentActiveCount == 0) {
-            currentActiveAvgWait = 0;
-            currentActiveFrustratedCount = 0;
-            return;
-        }
-
-        double totalActiveWait = 0;
-        int frustratedCount = 0;
-
-        for (Vehicle v : activeVehicles) {
-            totalActiveWait += v.getAccumulatedWaitingTime();
-            boolean waitCondition = v.getAccumulatedWaitingTime() > FRUSTRATION_WAIT_THRESHOLD;
-            boolean stopCondition = v.getStopCount() > 5;
-            if (waitCondition || stopCondition) {
-                frustratedCount++;
-            }
-        }
-
-        currentActiveAvgWait = totalActiveWait / currentActiveCount;
-        currentActiveFrustratedCount = frustratedCount;
-    }
 
     private void updateThroughput() {
         long now = System.currentTimeMillis();
@@ -139,24 +139,54 @@ public class MetricsManager {
         double totalVehicleArea = 0;
         int movingVehicles = 0;
 
+        // Reset real-time accumulators for this frame
+        currentActiveCount = 0;
+        currentActiveWaitSum = 0;
+        currentActiveCO2Sum = 0;
+        currentActiveFrustrated = 0;
+
         for (Vehicle v : activeVehicles) {
             totalVehicleArea += v.getArea();
             if (v.isMoving()) {
                 movingVehicles++;
             }
+
+            // Accumulate active vehicle stats for potential Summary
+            currentActiveCount++;
+            currentActiveWaitSum += v.getAccumulatedWaitingTime();
+            currentActiveCO2Sum += v.getTotalCO2();
+
+            boolean waitCondition = v.getAccumulatedWaitingTime() > FRUSTRATION_WAIT_THRESHOLD;
+            boolean stopCondition = v.getStopCount() > 5; // Frequent stops
+            if (waitCondition || stopCondition) {
+                currentActiveFrustrated++;
+            }
         }
 
-        // Map dimensions
-        double totalArea = map.getWidth() * map.getHeight();
-        if (totalArea > 0) {
-            occupancy = (totalVehicleArea / totalArea) * 100.0;
+        // Occupancy based on DRIVEABLE area
+        // SCALING: User perceives 20% as "Low" even in gridlock due to wide
+        // roads/shoulders.
+        // We scale by 3.0 to approximate "Lane Occupancy" (effective density).
+        if (totalDriveableTiles > 0) {
+            double rawOccupancy = (totalVehicleArea / totalDriveableTiles) * 100.0;
+            occupancy = Math.min(100.0, rawOccupancy * 3.0);
         }
+        //
 
         // Deadlock / Logic Failure Detection
         // Relaxed Definition: If > 50% of vehicles are NOT moving, consider it a
         // deadlock risk
         int stoppedVehicles = activeVehicles.size() - movingVehicles;
-        boolean isHighStopRate = !activeVehicles.isEmpty() && ((double) stoppedVehicles / activeVehicles.size() > 0.5);
+        boolean isHighStopRate = false;
+
+        if (!activeVehicles.isEmpty()) {
+            currentDeadlockRate = ((double) stoppedVehicles / activeVehicles.size()) * 100.0;
+            if (currentDeadlockRate > 50.0) {
+                isHighStopRate = true;
+            }
+        } else {
+            currentDeadlockRate = 0.0;
+        }
 
         if (isHighStopRate) {
             deadlockFrames++;
@@ -200,51 +230,37 @@ public class MetricsManager {
     }
 
     public double getDeadlockRate() {
-        if (totalFrames == 0)
-            return 0.0;
-        return ((double) deadlockFrames / totalFrames) * 100.0;
+        return currentDeadlockRate;
     }
 
     public int getBlockageCount() {
         return blockageCount;
     }
 
-    // Summary (Post-Simulation) - Returns aggregates based on exited vehicles AND
-    // active vehicles for live verification
-    public double getFinalAvgWaitingTime() {
-        int totalCount = exitedVehicleCount + currentActiveCount;
-        if (totalCount == 0)
-            return 0.0;
+    // SUMMARY METRICS: NOW INCLUDE ACTIVE VEHICLES FOR DEADLOCK SCENARIOS
 
-        double totalWait = totalWaitingTime + (currentActiveAvgWait * currentActiveCount);
-        return totalWait / totalCount;
+    public double getFinalAvgWaitingTime() {
+        int total = exitedVehicleCount + currentActiveCount;
+        if (total == 0)
+            return 0.0;
+        return (totalWaitingTime + currentActiveWaitSum) / total;
     }
 
     public double getFinalAvgTravelTime() {
         if (exitedVehicleCount == 0)
             return 0.0;
-        // For travel time, we typically only count completed trips,
-        // as active ones are technically infinite until done.
-        return totalTravelTime / exitedVehicleCount;
+        return totalTravelTime / exitedVehicleCount; // Travel time only meaningful for completed trips
     }
 
     public double getFinalTotalCO2() {
-        return totalCO2; // Note: You might want to add active vehicles CO2 here if not already
-                         // accumulating somewhere?
-                         // Vehicle.totalCO2 accumulates in update(), but we only add to this.totalCO2 on
-                         // exit.
-                         // For now, let's leave CO2 as exit-based or update if requested.
-                         // To match WaitTime pattern, we generally should include active CO2.
-                         // But for now, sticking to the requested fixes.
+        return totalCO2 + currentActiveCO2Sum;
     }
 
     public double getFinalFrustrationRate() {
-        int totalCount = exitedVehicleCount + currentActiveCount;
-        if (totalCount == 0)
+        int total = exitedVehicleCount + currentActiveCount;
+        if (total == 0)
             return 0.0;
-
-        int totalFrustrated = frustratedExitedCount + currentActiveFrustratedCount;
-        return ((double) totalFrustrated / totalCount) * 100.0;
+        return ((double) (frustratedExitedCount + currentActiveFrustrated) / total) * 100.0;
     }
 
     public int getExitedCount() {

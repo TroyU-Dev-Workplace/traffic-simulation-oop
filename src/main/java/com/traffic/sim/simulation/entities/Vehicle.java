@@ -6,11 +6,24 @@ import java.util.List;
 import com.traffic.sim.simulation.managers.TrafficLightSystem;
 import com.traffic.sim.simulation.map.Map;
 
+/**
+ * Represents a vehicle in the simulation.
+ * Handles state, movement, and interaction with the map/traffic lights.
+ */
 public class Vehicle {
 
     public enum TurnDirection {
         STRAIGHT, LEFT, RIGHT
     }
+
+    // Lane centers for turning logic
+    private static final double LANE_CENTER_SOUTH = 21.0;
+    private static final double LANE_CENTER_NORTH = 28.0;
+    private static final double LANE_CENTER_WEST = 14.0;
+    private static final double LANE_CENTER_EAST = 21.0;
+
+    // Time per frame (assuming 60 FPS)
+    private static final double FRAME_DURATION = 1.0 / 60.0;
 
     private final String id;
     private double x;
@@ -25,8 +38,8 @@ public class Vehicle {
 
     private TurnDirection plannedTurn;
 
+    // Spawn region metadata (used for metrics/verification)
     private Region spawnRegion;
-    private boolean isStoppedForVehicle;
     private int spawnRegionMinX;
     private int spawnRegionMinY;
     private int spawnRegionMaxX;
@@ -34,14 +47,15 @@ public class Vehicle {
     private boolean spawnRegionBoundsSet;
     private Double spawnRegionCenterX;
     private Double spawnRegionCenterY;
+
     private boolean shouldBeRemoved = false;
     private double rotation = 0.0;
 
+    // Metric Data
     private double totalCO2;
     private int waitingFrames;
     private final long entryTime;
 
-    // Metrics Data
     private long spawnTime; // Time in ms
     private double accumulatedWaitingTime; // Seconds
     private int stopCount;
@@ -61,13 +75,7 @@ public class Vehicle {
         }
     }
 
-    public Vehicle(
-            String id,
-            double x,
-            double y,
-            double speed,
-            VehicleType type,
-            Direction direction) {
+    public Vehicle(String id, double x, double y, double speed, VehicleType type, Direction direction) {
         this.id = id;
         this.x = x;
         this.y = y;
@@ -89,7 +97,7 @@ public class Vehicle {
 
         this.plannedTurn = TurnDirection.STRAIGHT;
         this.spawnRegion = null;
-        this.isStoppedForVehicle = false;
+
         this.spawnRegionMinX = Integer.MIN_VALUE;
         this.spawnRegionMinY = Integer.MIN_VALUE;
         this.spawnRegionMaxX = Integer.MAX_VALUE;
@@ -106,47 +114,22 @@ public class Vehicle {
     }
 
     private void initializeSprite() {
+        int index;
         switch (type) {
             case CAR:
-                int index = (int) (Math.random() * 18) + 1;
+                index = 1 + (int) (Math.random() * 18); // 1-18
                 this.spritePath = "/assets/vehicles/Car" + index + ".png";
                 break;
             case TRUCK:
-                int index2 = (int) (Math.random() * 2) + 19;
-                this.spritePath = "/assets/vehicles/Car" + index2 + ".png";
+                index = 19 + (int) (Math.random() * 2); // 19-20
+                this.spritePath = "/assets/vehicles/Car" + index + ".png";
                 break;
             case MOTORCYCLE:
-                int index3 = (int) (Math.random() * 4) + 1;
-                this.spritePath = "/assets/vehicles/moto" + index3 + ".png";
+                index = 1 + (int) (Math.random() * 4); // 1-4
+                this.spritePath = "/assets/vehicles/moto" + index + ".png";
                 break;
-        }
-    }
-
-    /**
-     * Updates the vehicle's state (position, CO2, waiting time) independent of the
-     * map.
-     * This is typically used for simple animations or state tracking.
-     */
-    public void update() {
-        if (speed > 0) {
-            x += direction.dx() * speed;
-            y += direction.dy() * speed;
-            totalCO2 += type.getEmissionMoving();
-            isMoving = true;
-            if (wasStopped) {
-                wasStopped = false;
-            }
-        } else {
-            waitingFrames++;
-            totalCO2 += type.getEmissionIdling();
-            isMoving = false;
-            // Add frame time (assuming ~60fps, 1/60 sec)
-            accumulatedWaitingTime += (1.0 / 60.0);
-
-            if (!wasStopped) {
-                stopCount++;
-                wasStopped = true;
-            }
+            default:
+                this.spritePath = "/assets/vehicles/Car1.png";
         }
     }
 
@@ -161,6 +144,8 @@ public class Vehicle {
             this.direction = Direction.UP;
         }
     }
+
+    // --- Getters & Setters ---
 
     public String getId() {
         return id;
@@ -242,26 +227,12 @@ public class Vehicle {
         return isMoving;
     }
 
-    /**
-     * Updates the vehicle's speed and state based on the traffic light signal.
-     * 
-     * @param lightState The current state of the relevant traffic light.
-     */
-    public void respondToTrafficLight(TrafficLight.State lightState) {
-        switch (lightState) {
-            case RED:
-                this.speed = 0.0;
-                this.isStoppedAtLight = true;
-                break;
-            case YELLOW:
-                this.speed = this.originalSpeed * 0.3;
-                this.isStoppedAtLight = false;
-                break;
-            case GREEN:
-                this.speed = this.originalSpeed;
-                this.isStoppedAtLight = false;
-                break;
-        }
+    public void setRotation(double rotation) {
+        this.rotation = rotation;
+    }
+
+    public double getRotation() {
+        return rotation;
     }
 
     public boolean isStoppedAtLight() {
@@ -280,16 +251,65 @@ public class Vehicle {
         return direction.dy();
     }
 
+    public boolean shouldBeRemoved() {
+        return shouldBeRemoved;
+    }
+
+    public void setPlannedTurn(TurnDirection turn) {
+        this.plannedTurn = turn;
+    }
+
+    // --- Spawn Region Logic ---
+
+    public void setSpawnRegion(Region region) {
+        this.spawnRegion = region;
+    }
+
+    public void setSpawnRegionBounds(int minX, int minY, int maxX, int maxY) {
+        this.spawnRegionMinX = minX;
+        this.spawnRegionMinY = minY;
+        this.spawnRegionMaxX = maxX;
+        this.spawnRegionMaxY = maxY;
+        this.spawnRegionBoundsSet = true;
+    }
+
+    public void setSpawnRegionCenter(double centerX, double centerY) {
+        this.spawnRegionCenterX = centerX;
+        this.spawnRegionCenterY = centerY;
+    }
+
+    public boolean isInsideSpawnRegion() {
+        if (spawnRegionBoundsSet) {
+            return x >= spawnRegionMinX && x <= spawnRegionMaxX
+                    && y >= spawnRegionMinY && y <= spawnRegionMaxY;
+        }
+        if (spawnRegion != null && spawnRegionCenterX != null && spawnRegionCenterY != null) {
+            switch (spawnRegion) {
+                case NORTH:
+                    return y <= spawnRegionCenterY;
+                case SOUTH:
+                    return y >= spawnRegionCenterY;
+                case WEST:
+                    return x <= spawnRegionCenterX;
+                case EAST:
+                    return x >= spawnRegionCenterX;
+            }
+        }
+        return true;
+    }
+
+    // --- Core Logic ---
+
     /**
      * Updates the vehicle's position and logic interacting with the map and traffic
      * lights.
      * Handles movement validation, turning, and stop-line behaviors.
-     * 
-     * @param map The simulation map.
-     * @param tls The traffic light system.
      */
     public void updateWithMap(Map map, TrafficLightSystem tls) {
+        boolean didMove = false;
+
         if (speed > 0 || isStoppedAtLight) {
+            // Turning Logic
             if (plannedTurn != TurnDirection.STRAIGHT && !isStoppedAtLight && speed > 0) {
                 checkAndExecuteTurn(map);
             }
@@ -297,14 +317,16 @@ public class Vehicle {
             double nextX = x + direction.dx() * speed;
             double nextY = y + direction.dy() * speed;
 
-            // Anti-Deadlock: Don't Block the Box
+            // Anti-Deadlock: Don't enter intersection if exit blocked
             if (willEnterIntersection(x, y, nextX, nextY, map)) {
                 if (isExitBlocked(map)) {
                     this.speed = 0;
-                    return; // Wait at the line/boundary
+                    trackStoppedState();
+                    return;
                 }
             }
 
+            // Check Map Bounds
             List<GridPoint> nextOccupied = getTargetCells(nextX, nextY);
             boolean outOfBounds = false;
             for (GridPoint p : nextOccupied) {
@@ -314,22 +336,24 @@ public class Vehicle {
                 }
             }
 
+            // Allow moving if still inside designated spawn region (entry phase)
             if (outOfBounds) {
                 if (isInsideSpawnRegion()) {
                     outOfBounds = false;
                 }
             }
 
+            // Exit Simulation
             if (outOfBounds) {
                 clearOccupiedCells(map);
                 this.shouldBeRemoved = true;
                 return;
             }
 
+            // Stop Line Logic
             double frontDist = type.getWidthCells() / 2.0;
             int nextGridX = (int) Math.floor(nextX + direction.dx() * (frontDist + 0.5));
             int nextGridY = (int) Math.floor(nextY + direction.dy() * (frontDist + 0.5));
-
             int nextTileType = map.getTileType(nextGridX, nextGridY);
 
             if (nextTileType == Map.STOP_LINE) {
@@ -337,20 +361,20 @@ public class Vehicle {
                 int currentGridY = (int) Math.floor(y);
 
                 if (map.getTileType(currentGridX, currentGridY) != Map.STOP_LINE) {
-                    // Fix: Stop bug where vehicles catch red light again while clearing
-                    // Only stop if we are not already inside the intersection
+                    // Only stop if NOT already inside intersection
                     if (!isInsideIntersection(x, y, map)) {
                         TrafficLight.State lightState = getTrafficLightState(tls);
-
                         if (lightState != TrafficLight.State.GREEN) {
                             this.speed = 0;
                             this.isStoppedAtLight = true;
+                            trackStoppedState();
                             return;
                         }
                     }
                 }
             }
 
+            // Move if clear
             if (canMoveTo(map, nextX, nextY)) {
                 this.speed = this.originalSpeed;
                 this.isStoppedAtLight = false;
@@ -359,10 +383,12 @@ public class Vehicle {
                 this.x = nextX;
                 this.y = nextY;
                 this.totalCO2 += type.getEmissionMoving();
+                didMove = true;
             } else {
                 this.speed = 0;
             }
         } else {
+            // Stopped Logic
             if (isStoppedAtLight) {
                 TrafficLight.State lightState = getTrafficLightState(tls);
                 if (lightState == TrafficLight.State.GREEN) {
@@ -370,6 +396,7 @@ public class Vehicle {
                     this.isStoppedAtLight = false;
                 }
             } else {
+                // Resume from obstacle stop
                 double nextX = x + direction.dx() * originalSpeed;
                 double nextY = y + direction.dy() * originalSpeed;
                 if (canMoveTo(map, nextX, nextY)) {
@@ -380,20 +407,32 @@ public class Vehicle {
             waitingFrames++;
             totalCO2 += type.getEmissionIdling();
         }
+
+        if (didMove) {
+            trackMovingState();
+        } else if (speed == 0) {
+            trackStoppedState();
+        }
     }
 
-    /**
-     * Checks if the vehicle is at a turning point and executes the turn if planned.
-     * Snaps the vehicle to the lane center upon turning.
-     * 
-     * @param map The simulation map.
-     */
-    private void checkAndExecuteTurn(Map map) {
-        double laneCenterSouth = 21.0;
-        double laneCenterNorth = 28.0;
-        double laneCenterWest = 14.0;
-        double laneCenterEast = 21.0;
+    private void trackMovingState() {
+        isMoving = true;
+        if (wasStopped) {
+            wasStopped = false;
+        }
+    }
 
+    private void trackStoppedState() {
+        isMoving = false;
+        accumulatedWaitingTime += FRAME_DURATION;
+
+        if (!wasStopped) {
+            stopCount++;
+            wasStopped = true;
+        }
+    }
+
+    private void checkAndExecuteTurn(Map map) {
         boolean turned = false;
         Direction newDir = direction;
         double newRot = rotation;
@@ -401,49 +440,49 @@ public class Vehicle {
         double snapY = y;
 
         if (direction == Direction.DOWN) {
-            if (y >= laneCenterEast && plannedTurn == TurnDirection.LEFT) {
-                snapY = laneCenterEast;
+            if (y >= LANE_CENTER_EAST && plannedTurn == TurnDirection.LEFT) {
+                snapY = LANE_CENTER_EAST;
                 newDir = Direction.RIGHT;
                 newRot = 0.0;
                 turned = true;
-            } else if (y >= laneCenterWest && plannedTurn == TurnDirection.RIGHT) {
-                snapY = laneCenterWest;
+            } else if (y >= LANE_CENTER_WEST && plannedTurn == TurnDirection.RIGHT) {
+                snapY = LANE_CENTER_WEST;
                 newDir = Direction.LEFT;
                 newRot = 180.0;
                 turned = true;
             }
         } else if (direction == Direction.UP) {
-            if (y <= laneCenterWest && plannedTurn == TurnDirection.LEFT) {
-                snapY = laneCenterWest;
+            if (y <= LANE_CENTER_WEST && plannedTurn == TurnDirection.LEFT) {
+                snapY = LANE_CENTER_WEST;
                 newDir = Direction.LEFT;
                 newRot = 180.0;
                 turned = true;
-            } else if (y <= laneCenterEast && plannedTurn == TurnDirection.RIGHT) {
-                snapY = laneCenterEast;
+            } else if (y <= LANE_CENTER_EAST && plannedTurn == TurnDirection.RIGHT) {
+                snapY = LANE_CENTER_EAST;
                 newDir = Direction.RIGHT;
                 newRot = 0.0;
                 turned = true;
             }
         } else if (direction == Direction.RIGHT) {
-            if (x >= laneCenterNorth && plannedTurn == TurnDirection.LEFT) {
-                snapX = laneCenterNorth;
+            if (x >= LANE_CENTER_NORTH && plannedTurn == TurnDirection.LEFT) {
+                snapX = LANE_CENTER_NORTH;
                 newDir = Direction.UP;
                 newRot = -90.0;
                 turned = true;
-            } else if (x >= laneCenterSouth && plannedTurn == TurnDirection.RIGHT) {
-                snapX = laneCenterSouth;
+            } else if (x >= LANE_CENTER_SOUTH && plannedTurn == TurnDirection.RIGHT) {
+                snapX = LANE_CENTER_SOUTH;
                 newDir = Direction.DOWN;
                 newRot = 90.0;
                 turned = true;
             }
         } else if (direction == Direction.LEFT) {
-            if (x <= laneCenterSouth && plannedTurn == TurnDirection.LEFT) {
-                snapX = laneCenterSouth;
+            if (x <= LANE_CENTER_SOUTH && plannedTurn == TurnDirection.LEFT) {
+                snapX = LANE_CENTER_SOUTH;
                 newDir = Direction.DOWN;
                 newRot = 90.0;
                 turned = true;
-            } else if (x <= laneCenterNorth && plannedTurn == TurnDirection.RIGHT) {
-                snapX = laneCenterNorth;
+            } else if (x <= LANE_CENTER_NORTH && plannedTurn == TurnDirection.RIGHT) {
+                snapX = LANE_CENTER_NORTH;
                 newDir = Direction.UP;
                 newRot = -90.0;
                 turned = true;
@@ -455,17 +494,8 @@ public class Vehicle {
             int newW = isHoriz ? type.getWidthCells() : type.getHeightCells();
             int newH = isHoriz ? type.getHeightCells() : type.getWidthCells();
 
-            if (newW % 2 != 0) {
-                snapX = Math.floor(snapX) + 0.5;
-            } else {
-                snapX = Math.floor(snapX + 0.5);
-            }
-
-            if (newH % 2 != 0) {
-                snapY = Math.floor(snapY) + 0.5;
-            } else {
-                snapY = Math.floor(snapY + 0.5);
-            }
+            snapX = (newW % 2 != 0) ? Math.floor(snapX) + 0.5 : Math.floor(snapX + 0.5);
+            snapY = (newH % 2 != 0) ? Math.floor(snapY) + 0.5 : Math.floor(snapY + 0.5);
 
             clearOccupiedCells(map);
 
@@ -501,9 +531,8 @@ public class Vehicle {
                 targetRegion = Region.NORTH;
         }
 
-        for (TrafficLight light : tls.getTrafficLights()) {
-            if (light.getRegion() == targetRegion
-                    && light.getType() == TrafficLight.TrafficLightType.VEHICLE) {
+        for (com.traffic.sim.simulation.entities.TrafficLight light : tls.getTrafficLights()) {
+            if (light.getRegion() == targetRegion && light.getType() == TrafficLight.TrafficLightType.VEHICLE) {
                 return light.getCurrentState();
             }
         }
@@ -513,11 +542,10 @@ public class Vehicle {
     private boolean canMoveTo(Map map, double targetX, double targetY) {
         List<GridPoint> nextCells = getTargetCells(targetX, targetY);
         for (GridPoint p : nextCells) {
-            if (!map.isValid(p.x, p.y)) {
+            if (!map.isValid(p.x, p.y))
                 continue;
-            }
 
-            int type = map.getTileType(p.x, p.y);
+            int tileType = map.getTileType(p.x, p.y);
 
             boolean isSelf = false;
             for (GridPoint occ : occupiedCells) {
@@ -529,15 +557,12 @@ public class Vehicle {
             if (isSelf)
                 continue;
 
-            if (type == Map.BLOCKED) {
+            if (tileType == Map.BLOCKED)
                 return false;
-            }
-            if (type == Map.LANE_DIVIDER) {
-                return true; // Use lane divider as valid road
-            }
-            if (type == Map.SIDEWALK) {
+            if (tileType == Map.LANE_DIVIDER)
+                return true;
+            if (tileType == Map.SIDEWALK)
                 return false;
-            }
         }
         return true;
     }
@@ -601,31 +626,22 @@ public class Vehicle {
         }
 
         // Add 1-cell buffer in front of the vehicle
-        // This ensures a 1-cell gap between vehicles
         if (direction != null) {
-            // Determine the "front" range based on direction
             int dirX = (int) Math.signum(direction.dx());
             int dirY = (int) Math.signum(direction.dy());
 
             if (dirX != 0) { // Moving horizontally
-                // If moving RIGHT (1), add to Max X. If LEFT (-1), add to Min X.
-                // The current cells range from startX to startX + w
-                // Front X depends on direction
                 int frontX = (dirX > 0) ? (int) Math.floor(startX + w - 1 + 0.01) + 1
                         : (int) Math.floor(startX + 0.01) - 1;
 
-                // Add the whole height column at this frontX
                 for (int j = 0; j < h; j++) {
                     int iy = (int) Math.floor(startY + j + 0.01);
                     cells.add(new GridPoint(frontX, iy, 0));
                 }
             } else if (dirY != 0) { // Moving vertically
-                // If moving DOWN (1), add to Max Y. If UP (-1), add to Min Y.
-                // Front Y depends on direction
                 int frontY = (dirY > 0) ? (int) Math.floor(startY + h - 1 + 0.01) + 1
                         : (int) Math.floor(startY + 0.01) - 1;
 
-                // Add the whole width row at this frontY
                 for (int i = 0; i < w; i++) {
                     int ix = (int) Math.floor(startX + i + 0.01);
                     cells.add(new GridPoint(ix, frontY, 0));
@@ -636,248 +652,30 @@ public class Vehicle {
         return cells;
     }
 
-    public boolean shouldBeRemoved() {
-        return shouldBeRemoved;
-    }
-
-    public void markForRemoval() {
-        this.shouldBeRemoved = true;
-    }
-
-    public void setPosition(double x, double y) {
-        this.x = x;
-        this.y = y;
-    }
-
-    public void setPlannedTurn(TurnDirection turn) {
-        this.plannedTurn = turn;
-    }
-
-    public TurnDirection getPlannedTurn() {
-        return plannedTurn;
-    }
-
-    public void setSpawnRegion(Region region) {
-        this.spawnRegion = region;
-    }
-
-    public Region getSpawnRegion() {
-        return spawnRegion;
-    }
-
-    public void setSpawnRegionBounds(int minX, int minY, int maxX, int maxY) {
-        this.spawnRegionMinX = minX;
-        this.spawnRegionMinY = minY;
-        this.spawnRegionMaxX = maxX;
-        this.spawnRegionMaxY = maxY;
-        this.spawnRegionBoundsSet = true;
-    }
-
-    public void setSpawnRegionCenter(double centerX, double centerY) {
-        this.spawnRegionCenterX = centerX;
-        this.spawnRegionCenterY = centerY;
-    }
-
-    public boolean isInsideSpawnRegion() {
-        if (spawnRegionBoundsSet) {
-            return x >= spawnRegionMinX && x <= spawnRegionMaxX
-                    && y >= spawnRegionMinY && y <= spawnRegionMaxY;
-        }
-        if (spawnRegion != null && spawnRegionCenterX != null && spawnRegionCenterY != null) {
-            if (spawnRegion == Region.NORTH) {
-                return y <= spawnRegionCenterY;
-            }
-            if (spawnRegion == Region.SOUTH) {
-                return y >= spawnRegionCenterY;
-            }
-            if (spawnRegion == Region.WEST) {
-                return x <= spawnRegionCenterX;
-            }
-            if (spawnRegion == Region.EAST) {
-                return x >= spawnRegionCenterX;
-            }
-        }
-        return true;
-    }
-
-    public boolean isStoppedForVehicle() {
-        return isStoppedForVehicle;
-    }
-
-    public void setStoppedForVehicle(boolean stopped) {
-        this.isStoppedForVehicle = stopped;
-    }
-
-    public boolean hasVehicleAhead(Iterable<Vehicle> vehicles, double lookAheadDistance, double lateralThreshold) {
-        return hasVehicleAheadInDirection(vehicles, direction.dx(), direction.dy(), lookAheadDistance,
-                lateralThreshold);
-    }
-
-    public boolean hasVehicleAheadForTurn(Iterable<Vehicle> vehicles, double lookAheadDistance,
-            double lateralThreshold) {
-        if (plannedTurn == TurnDirection.STRAIGHT) {
-            return hasVehicleAhead(vehicles, lookAheadDistance, lateralThreshold);
-        }
-
-        double baseX = direction.dx();
-        double baseY = direction.dy();
-
-        double targetX;
-        double targetY;
-        if (plannedTurn == TurnDirection.LEFT) {
-            targetX = -baseY;
-            targetY = baseX;
-        } else if (plannedTurn == TurnDirection.RIGHT) {
-            targetX = baseY;
-            targetY = -baseX;
-        } else {
-            targetX = baseX;
-            targetY = baseY;
-        }
-
-        if (hasVehicleAheadInDirection(vehicles, direction.dx(), direction.dy(), lookAheadDistance, lateralThreshold)) {
-            return true;
-        }
-        return hasVehicleAheadInDirection(vehicles, targetX, targetY, lookAheadDistance, lateralThreshold);
-    }
-
-    private boolean hasVehicleAheadInDirection(Iterable<Vehicle> vehicles, double dirX, double dirY,
-            double lookAheadDistance, double lateralThreshold) {
-        double dirMag = Math.sqrt(dirX * dirX + dirY * dirY);
-        if (dirMag == 0) {
-            return false;
-        }
-        double normX = dirX / dirMag;
-        double normY = dirY / dirMag;
-
-        for (Vehicle other : vehicles) {
-            if (other == this) {
-                continue;
-            }
-
-            if (other.isStoppedAtLight() && this.speed > 0) {
-                continue;
-            }
-
-            double dx = other.getX() - this.x;
-            double dy = other.getY() - this.y;
-
-            double distanceSquared = dx * dx + dy * dy;
-            if (distanceSquared > lookAheadDistance * lookAheadDistance) {
-                continue;
-            }
-
-            double forwardDist = dx * normX + dy * normY;
-            if (forwardDist <= 0.1 || forwardDist > lookAheadDistance) {
-                continue;
-            }
-
-            double lateralDist = Math.abs(dx * -normY + dy * normX);
-            if (lateralDist <= lateralThreshold) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public double getRotation() {
-        return rotation;
-    }
-
-    public void setRotation(double rotation) {
-        this.rotation = rotation;
-    }
-
-    // Helper methods for Anti-Deadlock
+    // --- Anti-Deadlock Helpers ---
 
     private boolean willEnterIntersection(double currentX, double currentY, double nextX, double nextY, Map map) {
-        boolean currentlyIn = isInsideIntersection(currentX, currentY, map);
-        boolean nextIn = isInsideIntersection(nextX, nextY, map);
-        return !currentlyIn && nextIn;
+        boolean currentlyInside = isInsideIntersection(currentX, currentY, map);
+        boolean nextInside = isInsideIntersection(nextX, nextY, map);
+        return !currentlyInside && nextInside;
     }
 
-    private boolean isInsideIntersection(double x, double y, Map map) {
+    public boolean isInsideIntersection(double x, double y, Map map) {
         int[] bounds = map.getIntersectionBounds();
         return x >= bounds[0] && x <= bounds[2] && y >= bounds[1] && y <= bounds[3];
     }
 
     private boolean isExitBlocked(Map map) {
-        int[] bounds = map.getIntersectionBounds();
+        double probeDist = 8.0;
+        double probeX = x + direction.dx() * probeDist;
+        double probeY = y + direction.dy() * probeDist;
 
-        double exitDirX = direction.dx();
-        double exitDirY = direction.dy();
-
-        if (plannedTurn == TurnDirection.LEFT) {
-            if (direction == Direction.RIGHT) {
-                exitDirX = 0;
-                exitDirY = -1;
-            } else if (direction == Direction.UP) {
-                exitDirX = -1;
-                exitDirY = 0;
-            } else if (direction == Direction.LEFT) {
-                exitDirX = 0;
-                exitDirY = 1;
-            } else if (direction == Direction.DOWN) {
-                exitDirX = 1;
-                exitDirY = 0;
-            }
-        } else if (plannedTurn == TurnDirection.RIGHT) {
-            if (direction == Direction.RIGHT) {
-                exitDirX = 0;
-                exitDirY = 1;
-            } else if (direction == Direction.UP) {
-                exitDirX = 1;
-                exitDirY = 0;
-            } else if (direction == Direction.LEFT) {
-                exitDirX = 0;
-                exitDirY = -1;
-            } else if (direction == Direction.DOWN) {
-                exitDirX = -1;
-                exitDirY = 0;
-            }
-        }
-
-        double checkX = x;
-        double checkY = y;
-
-        if (exitDirX > 0)
-            checkX = bounds[2] + 2.0;
-        else if (exitDirX < 0)
-            checkX = bounds[0] - 2.0;
-
-        if (exitDirY > 0)
-            checkY = bounds[3] + 2.0;
-        else if (exitDirY < 0)
-            checkY = bounds[1] - 2.0;
-
-        int targetX = (int) Math.floor(checkX);
-        int targetY = (int) Math.floor(checkY);
-
-        if (plannedTurn != TurnDirection.STRAIGHT) {
-            if (exitDirX != 0) {
-                if (exitDirX > 0)
-                    targetY = 21;
-                else
-                    targetY = 14;
-            } else {
-                if (exitDirY > 0)
-                    targetX = 21;
-                else
-                    targetX = 28;
-            }
-        } else {
-            if (exitDirX != 0)
-                targetY = (int) Math.floor(y);
-            else
-                targetX = (int) Math.floor(x);
-        }
-
-        for (int i = 0; i < 3; i++) {
-            int tx = targetX + (int) (exitDirX * i);
-            int ty = targetY + (int) (exitDirY * i);
-
-            if (map.isValid(tx, ty) && map.getTileType(tx, ty) == Map.BLOCKED) {
-                return true;
+        List<GridPoint> cells = getTargetCells(probeX, probeY);
+        for (GridPoint p : cells) {
+            if (map.isValid(p.x, p.y)) {
+                if (map.getTileType(p.x, p.y) == Map.BLOCKED) {
+                    return true;
+                }
             }
         }
         return false;
