@@ -10,85 +10,119 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.layout.HBox?>
 
-<BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.traffic.sim.controller.UIController">
+<BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.traffic.sim.controller.UIController"
+            stylesheets="@../styles/main.css">
     <!-- CENTER layout: Map + Control Panel -->
     <center>
         <HBox spacing="0">
             <!-- Simulation Canvas (Map) -->
             <Pane fx:id="simulationCanvas"
                   prefWidth="1000.0" prefHeight="720.0"
-                  style="-fx-background-color: #333;" />
+                  styleClass="simulation-canvas" />
 
             <!-- Control Panel -->
-            <VBox prefWidth="280.0" prefHeight="720.0"
-                  style="-fx-background-color: #222; -fx-padding: 10;"
-                  alignment="TOP_CENTER">
+            <javafx.scene.control.ScrollPane fitToWidth="true" fitToHeight="true"
+                  prefWidth="300.0" prefHeight="720.0"
+                  style="-fx-background-color: #181825; -fx-padding: 0;"
+                  hbarPolicy="NEVER" vbarPolicy="AS_NEEDED">
+                <content>
+                    <VBox styleClass="sidebar-panel"
+                          alignment="TOP_CENTER" spacing="15">
 
-                <Button text="Start" onAction="#onStartClicked" />
-                <Button text="Stop" onAction="#onStopClicked" />
-                <Button text="Reset" onAction="#onResetClicked" />
-                <Separator />
-                <!-- Auto Simulation Controls -->
-                <Button fx:id="autoSimButton" text="Auto Simulation" onAction="#onAutoSimClicked" />
-                <Label fx:id="timerLabel" text="02:00" textFill="cyan" style="-fx-font-size: 14px; -fx-padding: 5;" />
-                <Separator />
-                <Button fx:id="toggleGridButton" text="Toggle Grid" onAction="#onToggleGridClicked" />
-                <Separator />
-                <Button text="Spawn Vehicle" onAction="#onSpawnVehicleClicked" />
-                <Button text="Spawn Pedestrian" onAction="#onSpawnPedestrianClicked" />
-                <Separator />
-                <Label text="Traffic Light Settings (s)" textFill="white" />
-                <HBox spacing="5" alignment="CENTER">
-                     <Label text="G:" textFill="lightgreen"/>
-                     <TextField fx:id="greenInput" promptText="15" prefWidth="40" text="15"/>
-                     <Label text="Y:" textFill="yellow"/>
-                     <TextField fx:id="yellowInput" promptText="3" prefWidth="40" text="3"/>
-                     <Label text="R:" textFill="red"/>
-                     <TextField fx:id="redInput" promptText="2" prefWidth="40" text="2"/>
-                </HBox>
-                <Button text="Apply Settings" onAction="#onApplySettingsClicked" />
-                <Separator />
-                
-                <!-- METRICS DASHBOARD -->
-                <Label text="TRAFFIC ANALYTICS" textFill="white" style="-fx-font-weight: bold; -fx-font-size: 16px;"/>
-                <Separator />
-                
-                <VBox spacing="5" alignment="CENTER_LEFT" style="-fx-padding: 8; -fx-background-color: #111; -fx-border-color: #444; -fx-border-width: 1;">
-                    <!-- EFFICIENCY -->
-                    <Label text="Efficiency" textFill="#888" style="-fx-font-size: 10px; -fx-font-weight: bold;"/>
-                    <Label fx:id="lblThroughput" text="Throughput: 0 v/m" textFill="lightgreen"/>
-                    <Label fx:id="lblOccupancy" text="Occupancy: 0%" textFill="white"/>
-                    <Separator/>
+                        <!-- Title / Header -->
+                        <Label text="CONTROLS" styleClass="section-header" />
 
-                    <!-- SAFETY & CONGESTION -->
-                    <Label text="Safety &amp; Congestion" textFill="#888" style="-fx-font-size: 10px; -fx-font-weight: bold;"/>
-                    <Label fx:id="lblCongestion" text="Congestion: Normal" textFill="white"/>
-                    <Separator/>
+                        <!-- Main Controls -->
+                        <HBox spacing="10" alignment="CENTER">
+                            <Button text="Start" onAction="#onStartClicked" styleClass="btn, btn-success" />
+                            <Button text="Stop" onAction="#onStopClicked" styleClass="btn, btn-danger" />
+                            <Button text="Reset" onAction="#onResetClicked" styleClass="btn, btn-warning" />
+                        </HBox>
+                        
+                        <Separator styleClass="separator-horizontal"/>
 
-                     <!-- DEADLOCK & LOGIC -->
-                    <Label text="Deadlock &amp; Logic" textFill="#888" style="-fx-font-size: 10px; -fx-font-weight: bold;"/>
-                    <Label fx:id="lblDeadlockRate" text="Deadlock Rate: 0%" textFill="red"/>
-                    <Label fx:id="lblBlockageCount" text="Blockage Count: 0" textFill="red"/>
-                    <Separator/>
+                        <!-- Auto Simulation -->
+                        <VBox spacing="8" alignment="CENTER">
+                            <Button fx:id="autoSimButton" text="Auto Simulation" onAction="#onAutoSimClicked" styleClass="btn, btn-primary" />
+                            <Label fx:id="timerLabel" text="00:00" styleClass="timer-label" />
+                        </VBox>
 
-                    <!-- EXPERIENCE (Summary) -->
-                    <Label text="Experience (Summary)" textFill="#888" style="-fx-font-size: 10px; -fx-font-weight: bold;"/>
-                    <Label fx:id="lblAvgWait" text="Avg Wait: --" textFill="white"/>
-                    <Label fx:id="lblAvgTravel" text="Avg Travel: --" textFill="white"/>
-                    <Separator/>
+                        <Separator styleClass="separator-horizontal"/>
+                        
+                        <Button fx:id="toggleGridButton" text="Toggle Grid" onAction="#onToggleGridClicked" styleClass="btn, btn-secondary" />
 
-                    <!-- IMPACT (Summary) -->
-                    <Label text="Impact (Summary)" textFill="#888" style="-fx-font-size: 10px; -fx-font-weight: bold;"/>
-                    <Label fx:id="lblCO2" text="CO2: --" textFill="lightblue"/>
-                    <Label fx:id="lblFrustration" text="Frustration: --" textFill="orange"/>
-                </VBox>
-            </VBox>
+                        <Separator styleClass="separator-horizontal"/>
+
+                        <!-- Spawning -->
+                        <Label text="SPAWN ENTITIES" styleClass="section-subheader" />
+                        <VBox spacing="8" alignment="CENTER">
+                            <Button text="Spawn Vehicle" onAction="#onSpawnVehicleClicked" styleClass="btn, btn-action" maxWidth="200" />
+                            <Button text="Spawn Pedestrian" onAction="#onSpawnPedestrianClicked" styleClass="btn, btn-action" maxWidth="200" />
+                        </VBox>
+
+                        <Separator styleClass="separator-horizontal"/>
+
+                        <!-- Traffic Lights -->
+                        <Label text="TRAFFIC LIGHTS (s)" styleClass="section-subheader" />
+                        <HBox spacing="5" alignment="CENTER" styleClass="input-group">
+                            <VBox alignment="CENTER" spacing="2">
+                                <Label text="Green" textFill="#2ecc71" styleClass="label-small"/>
+                                <TextField fx:id="greenInput" promptText="15" prefWidth="50" text="15" styleClass="text-field-custom"/>
+                            </VBox>
+                            <VBox alignment="CENTER" spacing="2">
+                                <Label text="Yellow" textFill="#f1c40f" styleClass="label-small"/>
+                                <TextField fx:id="yellowInput" promptText="3" prefWidth="50" text="3" styleClass="text-field-custom"/>
+                            </VBox>
+                            <VBox alignment="CENTER" spacing="2">
+                                <Label text="Red" textFill="#e74c3c" styleClass="label-small"/>
+                                <TextField fx:id="redInput" promptText="2" prefWidth="50" text="2" styleClass="text-field-custom"/>
+                            </VBox>
+                        </HBox>
+                        <Button text="Apply Settings" onAction="#onApplySettingsClicked" styleClass="btn, btn-secondary" />
+                        
+                        <Separator styleClass="separator-horizontal"/>
+                        
+                        <!-- METRICS DASHBOARD -->
+                        <VBox styleClass="metrics-card" spacing="8">
+                            <Label text="ANALYTICS" styleClass="card-title"/>
+                            
+                            <VBox spacing="2">
+                                <HBox spacing="5" alignment="CENTER_LEFT">
+                                    <Label fx:id="lblThroughput" text="Throughput: 0 v/m" styleClass="metric-value-highlight"/>
+                                </HBox>
+                                <Label fx:id="lblOccupancy" text="Occupancy: 0%" styleClass="metric-value"/>
+                            </VBox>
+                            
+                            <Separator styleClass="separator-sub"/>
+                            
+                            <VBox spacing="2">
+                                <Label fx:id="lblCongestion" text="Congestion: Normal" styleClass="metric-value"/>
+                                <Label fx:id="lblDeadlockRate" text="Deadlock Rate: 0%" styleClass="metric-value, metric-danger"/>
+                                <Label fx:id="lblBlockageCount" text="Blockage Count: 0" styleClass="metric-value, metric-danger"/>
+                            </VBox>
+
+                            <Separator styleClass="separator-sub"/>
+
+                            <VBox spacing="2">
+                                <Label fx:id="lblAvgWait" text="Avg Wait: --" styleClass="metric-value-muted"/>
+                                <Label fx:id="lblAvgTravel" text="Avg Travel: --" styleClass="metric-value-muted"/>
+                                <Label fx:id="lblCO2" text="CO2: --" styleClass="metric-value-info"/>
+                                <Label fx:id="lblFrustration" text="Frustration: --" styleClass="metric-value-warning"/>
+                            </VBox>
+                        </VBox>
+                        
+                        <!-- Bottom Padding for scrolling -->
+                        <Pane minHeight="20"/>
+
+                    </VBox>
+                </content>
+            </javafx.scene.control.ScrollPane>
         </HBox>
     </center>
 
     <bottom>
-        <VBox alignment="CENTER" style="-fx-padding: 5;">
-            <Label text="Traffic Simulation - Group 1" textFill="white" />
+        <VBox alignment="CENTER" styleClass="footer">
+            <Label text="Traffic Simulation - Group 1" styleClass="footer-text" />
         </VBox>
     </bottom>
 </BorderPane>
